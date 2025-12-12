@@ -67,7 +67,7 @@
           <div class="flex items-center gap-4">
             <div id="status-indicator" class="flex items-center gap-2 px-3 py-1.5 rounded-full glass text-sm">
               <span class="status-dot w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-              <span class="text-slate-300">5 Agents Ready</span>
+              <span class="text-slate-300">8 Agents Ready</span>
             </div>
           </div>
         </div>
@@ -113,13 +113,16 @@
                   <span class="text-xs text-slate-500">Just now</span>
                 </div>
                 <div class="glass-dark rounded-xl rounded-tl-none px-4 py-3">
-                  <p class="text-slate-200">Welcome to <span class="font-semibold text-blue-400">Agent Battalion</span>!</p>
-                  <p class="text-slate-300 mt-2">Our team of 5 AI agents is ready to build your application:</p>
+                  <p class="text-slate-200">Welcome to <span class="font-semibold text-blue-400">Agent Battalion v2.0</span>!</p>
+                  <p class="text-slate-300 mt-2">Our team of 8 AI agents is ready to build your application:</p>
                   <ul class="mt-2 space-y-1 text-sm text-slate-400">
                     <li>👔 <strong>Alex</strong> - Product Manager</li>
                     <li>🏗️ <strong>Sam</strong> - Architect</li>
                     <li>🎨 <strong>Maya</strong> - Designer</li>
                     <li>💻 <strong>Jordan</strong> - Frontend Engineer</li>
+                    <li>🗄️ <strong>Morgan</strong> - Backend Engineer</li>
+                    <li>🔐 <strong>Casey</strong> - Security Agent</li>
+                    <li>📱 <strong>Taylor</strong> - Mobile Engineer</li>
                     <li>🔍 <strong>Riley</strong> - QA Engineer</li>
                   </ul>
                   <p class="text-slate-400 text-sm mt-3">Describe your app and watch us collaborate!</p>
@@ -284,12 +287,15 @@
     let currentProjectId = null;
     let messages = 1;
     
-    // Agent info
+    // Agent info - v2.0 with all 8 agents
     const agents = [
       { id: 'pm-agent', name: 'Alex', role: 'Product Manager', avatar: '👔', color: 'blue' },
       { id: 'architect-agent', name: 'Sam', role: 'Architect', avatar: '🏗️', color: 'indigo' },
       { id: 'designer-agent', name: 'Maya', role: 'Designer', avatar: '🎨', color: 'pink' },
-      { id: 'frontend-engineer-agent', name: 'Jordan', role: 'Engineer', avatar: '💻', color: 'green' },
+      { id: 'frontend-engineer-agent', name: 'Jordan', role: 'Frontend', avatar: '💻', color: 'green' },
+      { id: 'backend-engineer-agent', name: 'Morgan', role: 'Backend', avatar: '🗄️', color: 'orange' },
+      { id: 'security-agent', name: 'Casey', role: 'Security', avatar: '🔐', color: 'red' },
+      { id: 'mobile-agent', name: 'Taylor', role: 'Mobile', avatar: '📱', color: 'cyan' },
       { id: 'qa-engineer-agent', name: 'Riley', role: 'QA', avatar: '🔍', color: 'yellow' },
     ];
     
@@ -322,6 +328,10 @@
         'architect': 'architect-agent',
         'designer': 'designer-agent',
         'frontend_engineer': 'frontend-engineer-agent',
+        'backend_engineer': 'backend-engineer-agent',
+        'devops_engineer': 'security-agent',
+        'security': 'security-agent',
+        'mobile': 'mobile-agent',
         'qa_engineer': 'qa-engineer-agent',
       };
       

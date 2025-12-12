@@ -1,125 +1,60 @@
-# 🚀 Agent Battalion v2.0
+# Agent Battalion v3.0
 
-**MGX-Style Multi-Agent AI App Generator**
+> **AI-Powered Full-Stack App Generator with Multi-Agent Collaboration**
 
-Agent Battalion is an AI-powered full-stack application generator that uses a team of 5 specialized AI agents to collaboratively build complete Next.js 15 applications from natural language descriptions.
+An advanced MGX-style multi-agent system that generates complete, production-ready applications through collaborative AI agents.
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![Version](https://img.shields.io/badge/version-3.0.0-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black)
-![React](https://img.shields.io/badge/React-19-61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
+![Agents](https://img.shields.io/badge/AI%20Agents-8-green)
 
-## ✨ Features
+## 🚀 Features
 
-- 🤖 **5 Specialized AI Agents** - Product Manager, Architect, Designer, Engineer, QA
-- 🎨 **Dynamic Design System** - Custom colors, typography, and components for each project
-- 📊 **Quality Assurance** - Automated code review with accessibility checks
-- ⚡ **Real-time Collaboration** - Watch agents work together via WebSocket
-- 📦 **Production-Ready Output** - Complete Next.js 15 apps with best practices
-
-## 🤖 Meet the Team
-
+### Multi-Agent System (8 Specialized AI Agents)
 | Agent | Name | Role | Responsibilities |
-|-------|------|------|-----------------|
-| 👔 | **Alex** | Product Manager | Analyzes requirements, creates PRDs, prioritizes features |
-| 🏗️ | **Sam** | Architect | Designs system architecture, plans file structure |
-| 🎨 | **Maya** | Designer | Creates design systems, color palettes, component styles |
-| 💻 | **Jordan** | Frontend Engineer | Writes React/Next.js code, implements components |
-| 🔍 | **Riley** | QA Engineer | Reviews code quality, checks accessibility |
+|-------|------|------|------------------|
+| 👔 | Alex | Product Manager | Requirements analysis, project scoping, PRD generation |
+| 🏗️ | Sam | Architect | System design, tech stack selection, API planning |
+| 🎨 | Maya | Designer | Design systems, UI/UX, Tailwind configuration |
+| 💻 | Jordan | Frontend Engineer | Next.js 15, React 19, component generation |
+| 🗄️ | Morgan | Backend Engineer | Prisma schemas, API routes, authentication |
+| 🔐 | Casey | Security Agent | Vulnerability scanning, security audit |
+| 📱 | Taylor | Mobile Engineer | React Native / Expo app generation |
+| 🔍 | Riley | QA Engineer | Code review, accessibility, testing |
 
-## 🚀 Quick Start
+### Phase 1: Core Features ✅
+- **Real LLM Integration** - OpenAI, Anthropic, Google, Ollama support
+- **Unit Tests** - Comprehensive test coverage with Vitest
+- **Docker Deployment** - Production-ready containerization
+
+### Phase 2: Extended Agents ✅
+- **Backend Engineer** - Prisma schemas, CRUD APIs, authentication
+- **Security Agent** - OWASP-based vulnerability scanning
+- **Mobile Agent** - React Native / Expo project generation
+
+### Phase 3: Advanced Features ✅
+- **Vector Memory** - Semantic search with Pinecone/local embeddings
+- **Temporal Workflows** - Durable, retryable generation pipeline
+- **E2B Sandbox** - Secure code execution environment
+- **Human Feedback Loop** - Approval workflows, iterative refinement
+
+## 📦 Installation
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/your-repo/agent-battalion.git
 cd agent-battalion
 
 # Install dependencies
 npm install
 
-# Start the development server
-npm run dev
+# Set up environment variables
+cp packages/agent-battalion/.env.example packages/agent-battalion/.env
 
-# Open in browser
-open http://localhost:4000
+# Start development server
+npm run dev -w @meta/agent-battalion
 ```
-
-## 📁 Project Structure
-
-```
-agent-battalion/
-├── package.json                    # Monorepo configuration
-├── docker-compose.yml              # Docker services (Temporal, Redis, PostgreSQL)
-├── .env                            # Environment configuration
-│
-├── packages/
-│   ├── agent-battalion/            # Main package
-│   │   ├── src/
-│   │   │   ├── agents/             # MGX-style multi-agent system
-│   │   │   │   ├── team/           # Specialized agents
-│   │   │   │   │   ├── product-manager.ts
-│   │   │   │   │   ├── architect.ts
-│   │   │   │   │   ├── designer.ts
-│   │   │   │   │   ├── frontend-engineer.ts
-│   │   │   │   │   └── qa-engineer.ts
-│   │   │   │   ├── base-team-agent.ts
-│   │   │   │   ├── team-orchestrator.ts
-│   │   │   │   └── types.ts
-│   │   │   ├── memory/             # Agent memory system
-│   │   │   ├── communication/      # Agent messaging
-│   │   │   ├── tools/              # Agent tools
-│   │   │   └── web/                # Express + Socket.IO server
-│   │   └── public/                 # Web UI
-│   │
-│   └── agent-battalion-mcp/        # MCP server integration
-```
-
-## 🎯 How It Works
-
-1. **User Input** → Describe your app in natural language
-2. **Alex (PM)** → Analyzes requirements, creates PRD
-3. **Sam (Architect)** → Designs architecture, plans file structure
-4. **Maya (Designer)** → Creates design system (colors, typography, components)
-5. **Jordan (Engineer)** → Generates all code files
-6. **Riley (QA)** → Reviews code, checks quality & accessibility
-7. **Output** → Download complete Next.js 15 application
-
-## 📄 Generated Output
-
-Each project includes:
-
-### Configuration
-- `package.json` - Dependencies and scripts
-- `tsconfig.json` - TypeScript with path aliases
-- `tailwind.config.ts` - Custom design system
-- `next.config.ts` - Next.js configuration
-- `.env.local` - Environment template
-
-### Application
-- `app/layout.tsx` - Root layout with SEO
-- `app/page.tsx` - Home page
-- `app/globals.css` - Design tokens
-- `app/loading.tsx` - Loading state
-- `app/error.tsx` - Error boundary
-- `app/not-found.tsx` - 404 page
-
-### Components
-- `components/ui/` - Button, Input, Card, Modal
-- `components/layout/` - Header, Footer, Navigation
-- `components/sections/` - Hero, Features
-
-### Utilities
-- `lib/utils.ts` - Helper functions
-- `lib/constants.ts` - App constants
-- `types/index.ts` - TypeScript definitions
-- `hooks/` - Custom React hooks
-
-### Documentation
-- `README.md` - Project documentation
-- `docs/PRD.md` - Product Requirements
-- `docs/ARCHITECTURE.md` - System architecture
-- `docs/DESIGN_SYSTEM.md` - Design specifications
-- `docs/QA_REPORT.md` - Quality report
 
 ## 🔧 Configuration
 
@@ -128,113 +63,167 @@ Each project includes:
 ```env
 # Server
 PORT=4000
-NODE_ENV=development
 
-# LLM Provider (for future AI integration)
-LLM_PROVIDER=openai
-OPENAI_API_KEY=your-api-key
+# LLM Provider (openai, anthropic, google, ollama, mock)
+LLM_PROVIDER=mock
+OPENAI_API_KEY=sk-xxx
+ANTHROPIC_API_KEY=sk-ant-xxx
+GOOGLE_AI_API_KEY=xxx
 
-# Temporal (for workflow orchestration)
+# Vector Memory (optional)
+PINECONE_API_KEY=xxx
+PINECONE_ENVIRONMENT=us-east1
+
+# E2B Sandbox (optional)
+E2B_API_KEY=xxx
+
+# Temporal (optional)
 TEMPORAL_ADDRESS=localhost:7233
 ```
 
-### Docker Services
+## 🐳 Docker Deployment
 
 ```bash
-# Start all services
-docker-compose up -d
+# Build and run with Docker Compose
+docker-compose -f docker-compose.prod.yml up -d
 
-# Services:
-# - Temporal: localhost:7233
-# - Temporal UI: localhost:8080
-# - PostgreSQL: localhost:5432
-# - Redis: localhost:6379
+# View logs
+docker-compose -f docker-compose.prod.yml logs -f agent-battalion
 ```
 
-## 📊 API Endpoints
+## 🏗️ Project Structure
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Health check |
-| `/api/team` | GET | Get agent team info |
-| `/api/download/:id` | GET | Download project ZIP |
-| `/api/project/:id` | GET | Get project details |
+```
+agent-battalion/
+├── packages/
+│   ├── agent-battalion/           # Main package
+│   │   ├── src/
+│   │   │   ├── agents/            # AI Agent implementations
+│   │   │   │   ├── team/          # Specialized team agents
+│   │   │   │   │   ├── product-manager.ts
+│   │   │   │   │   ├── architect.ts
+│   │   │   │   │   ├── designer.ts
+│   │   │   │   │   ├── frontend-engineer.ts
+│   │   │   │   │   ├── backend-engineer.ts
+│   │   │   │   │   ├── security-agent.ts
+│   │   │   │   │   ├── mobile-agent.ts
+│   │   │   │   │   └── qa-engineer.ts
+│   │   │   │   ├── team-orchestrator.ts
+│   │   │   │   ├── base-team-agent.ts
+│   │   │   │   └── ai-agent.ts
+│   │   │   ├── llm/               # LLM service integration
+│   │   │   ├── memory/            # Memory management
+│   │   │   │   ├── memory-manager.ts
+│   │   │   │   └── vector-memory.ts
+│   │   │   ├── communication/     # Inter-agent messaging
+│   │   │   ├── tools/             # Tool registry
+│   │   │   ├── sandbox/           # E2B sandbox integration
+│   │   │   ├── feedback/          # Human feedback loop
+│   │   │   ├── temporal/          # Temporal workflows
+│   │   │   └── web/               # Express + Socket.IO server
+│   │   └── public/                # Web UI
+│   └── agent-battalion-mcp/       # MCP server (IDE integration)
+├── Dockerfile                     # Production Docker image
+├── Dockerfile.worker              # Temporal worker image
+├── docker-compose.prod.yml        # Production deployment
+└── nginx.conf                     # Nginx reverse proxy config
+```
 
-## 🔌 WebSocket Events
+## 🎯 Usage
 
-### Client → Server
-- `generate:start` - Start app generation
-- `generate:cancel` - Cancel generation
-- `file:content` - Request file content
+### Web Interface
 
-### Server → Client
-- `generation:progress` - Progress updates
-- `generation:complete` - Generation finished
-- `generation:error` - Error occurred
-- `team:event` - Agent events
-- `file:content` - File content response
+1. Start the server: `npm run dev -w @meta/agent-battalion`
+2. Open http://localhost:4000
+3. Enter your app description
+4. Watch the AI team collaborate in real-time
+5. Download the generated project
 
-## 🛠️ Development
+### API
+
+```typescript
+import { createTeamOrchestrator } from '@meta/agent-battalion';
+
+const orchestrator = createTeamOrchestrator({
+  projectName: 'My App',
+  useRealAI: true,
+});
+
+orchestrator.on('progress', (data) => {
+  console.log(`${data.agent}: ${data.message}`);
+});
+
+const result = await orchestrator.generate('Build a task management app');
+console.log(`Generated ${result.files.length} files`);
+```
+
+### LLM Service
+
+```typescript
+import { createLLMService } from '@meta/agent-battalion';
+
+const llm = createLLMService({
+  provider: 'openai',
+  model: 'gpt-4-turbo-preview',
+});
+
+const response = await llm.complete([
+  { role: 'user', content: 'Write a React component' }
+]);
+```
+
+## 📊 Generated Output
+
+Each project includes:
+
+- **Next.js 15 App Router** with TypeScript
+- **Tailwind CSS** design system
+- **React 19** components
+- **Prisma** schema (when backend enabled)
+- **API Routes** with Zod validation
+- **Authentication** setup
+- **Security audit** report
+- **QA report** with accessibility checks
+
+## 🔒 Security Features
+
+- **Vulnerability Scanning** - Detects XSS, SQL injection, hardcoded secrets
+- **OWASP Top 10** - Checks for common vulnerabilities
+- **Dependency Audit** - Identifies vulnerable packages
+- **Security Headers** - CSP, CORS configuration
+- **Input Validation** - Zod schemas for all inputs
+
+## 🧪 Testing
 
 ```bash
-# Run in development mode
-npm run dev
+# Run tests
+npm test -w @meta/agent-battalion
 
-# Type check
-npm run build
+# Watch mode
+npm run test:watch -w @meta/agent-battalion
 
-# Run Temporal worker (optional)
-npm run worker --workspace=@meta/agent-battalion
+# Coverage
+npm run test:coverage -w @meta/agent-battalion
 ```
 
-## 🏗️ Architecture
+## 📈 Roadmap
 
-### Agent Communication Flow
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Team Orchestrator                         │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌────┐ │
-│  │   PM    │→│ Architect│→│ Designer│→│ Engineer│→│  QA │ │
-│  │  Alex   │  │   Sam   │  │  Maya   │  │ Jordan  │  │Riley│ │
-│  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └────┘ │
-│       ↓            ↓            ↓            ↓          ↓    │
-│  Requirements  Architecture  Design     Code Files  QA Report│
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-                    ┌─────────────────┐
-                    │  Message Bus    │
-                    │  + Memory       │
-                    │  + Tools        │
-                    └─────────────────┘
-```
-
-## 📝 Example Usage
-
-**Input:**
-> "Create a SaaS landing page with hero section, features grid, pricing plans, testimonials, and contact form"
-
-**Output:**
-- Complete Next.js 15 application
-- Custom design system (dark theme, gradient accents)
-- 20+ production-ready components
-- Responsive mobile-first design
-- Accessibility compliant (WCAG 2.1)
-- QA score: 85+/100
+- [ ] VS Code Extension
+- [ ] CLI Tool
+- [ ] Custom Agent Creation
+- [ ] Project Templates
+- [ ] Team Collaboration
+- [ ] Cloud Deployment (Vercel, Netlify)
+- [ ] Analytics Dashboard
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+Contributions are welcome! Please read our contributing guidelines before submitting PRs.
 
 ## 📄 License
 
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-Built with ❤️ by **Agent Battalion Team**
-
-*Inspired by MGX.dev's multi-agent architecture*
+Built with ❤️ by the Agent Battalion Team
