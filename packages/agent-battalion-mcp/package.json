@@ -1,0 +1,14 @@
+{
+  "name": "@meta/agent-battalion-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Agent Battalion",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
