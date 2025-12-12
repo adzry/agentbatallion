@@ -13,6 +13,7 @@
     "mcp:dev": "npm run dev --workspace=@meta/agent-battalion-mcp"
   },
   "devDependencies": {
+    "socket.io-client": "^4.8.1",
     "typescript": "^5.3.3"
   }
 }
