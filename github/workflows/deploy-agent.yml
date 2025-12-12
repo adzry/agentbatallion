@@ -1,0 +1,103 @@
+name: 🤖 Agent Battalion - Supreme Commander
+
+on:
+  workflow_dispatch:
+    inputs:
+      mission:
+        description: '🎯 Mission Briefing'
+        required: true
+        default: 'Analyze the codebase and suggest improvements'
+      model:
+        description: '🧠 AI Model'
+        required: true
+        type: choice
+        default: 'claude-3-5-sonnet-20240620'
+        options:
+          - claude-3-5-sonnet-20240620
+          - claude-3-opus
+          - gpt-4o
+      timeout:
+        description: '⏱️ Timeout (seconds)'
+        required: true
+        default: '300'
+      branch:
+        description: '🌿 Target Branch'
+        required: true
+        default: 'main'
+      notify:
+        description: '📢 Send Slack Notification'
+        type: boolean
+        default: false
+
+jobs:
+  deploy_agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Deploy Cloud Agent
+        id: deploy
+        run: |
+          echo "🎖️ Supreme Commander deploying agent..."
+          echo "Mission: ${{ github.event.inputs.mission }}"
+          
+          # We use jq to safely construct the JSON to avoid quote escaping issues
+          JSON_PAYLOAD=$(jq -n \
+            --arg name "agent-battalion-${{ github.run_number }}" \
+            --arg repo "https://github.com/${{ github.repository }}" \
+            --arg instruction "${{ github.event.inputs.mission }}" \
+            --arg model "${{ github.event.inputs.model }}" \
+            --arg branch "${{ github.event.inputs.branch }}" \
+            --argjson timeout ${{ github.event.inputs.timeout }} \
+            '{
+              name: $name,
+              repository: $repo,
+              instruction: $instruction,
+              model: $model,
+              timeout_seconds: $timeout,
+              branch: $branch,
+              create_pr: true
+            }')
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST https://api.cursor.com/v1/cloud-agents \
+            -H "Authorization: Bearer ${{ secrets.CURSOR_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 201 ]; then
+            echo "✅ Agent deployed successfully!"
+            echo "response=$BODY" >> $GITHUB_OUTPUT
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Deployment failed!"
+            echo "Error Body: $BODY"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+      
+      - name: 📊 Extract Agent Info
+        id: agent_info
+        if: steps.deploy.outputs.status == 'success'
+        run: |
+          AGENT_ID=$(echo '${{ steps.deploy.outputs.response }}' | jq -r '.agent_id // "unknown"')
+          MONITOR_URL=$(echo '${{ steps.deploy.outputs.response }}' | jq -r '.monitor_url // "N/A"')
+          
+          echo "agent_id=$AGENT_ID" >> $GITHUB_OUTPUT
+          echo "monitor_url=$MONITOR_URL" >> $GITHUB_OUTPUT
+      
+      - name: 📝 Mission Summary
+        if: always()
+        run: |
+          echo "## 🎖️ Agent Battalion Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Mission:** ${{ github.event.inputs.mission }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ steps.deploy.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.deploy.outputs.status }}" == "success" ]; then
+            echo "**Agent ID:** ${{ steps.agent_info.outputs.agent_id }}" >> $GITHUB_STEP_SUMMARY
+            echo "🔗 [Monitor Agent Activity](${{ steps.agent_info.outputs.monitor_url }})" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Deployment failed. Check logs." >> $GITHUB_STEP_SUMMARY
+          fi
