@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Battalion - AI App Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'gradient': 'gradient 8s linear infinite',
+            'typing': 'typing 1.5s ease-in-out infinite',
+          },
+          keyframes: {
+            gradient: {
+              '0%, 100%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+            },
+            typing: {
+              '0%, 100%': { opacity: 0.3 },
+              '50%': { opacity: 1 },
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      min-height: 100vh;
+    }
+    
+    .glass {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .glass-dark {
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .gradient-border {
+      position: relative;
+    }
+    
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+    
+    .progress-ring {
+      transition: stroke-dashoffset 0.5s ease-in-out;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+    
+    .file-tree-line {
+      border-left: 1px dashed rgba(148, 163, 184, 0.3);
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: rgba(30, 41, 59, 0.5);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.5);
+      border-radius: 3px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.8);
+    }
+    
+    /* Typing indicator dots */
+    .typing-dot {
+      animation: typing 1.4s infinite ease-in-out;
+    }
+    
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    .code-block {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+  </style>
+</head>
+<body class="dark text-white">
+  <div id="app" class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="glass-dark sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold gradient-text">Agent Battalion</h1>
+              <p class="text-xs text-slate-400">AI-Powered App Generator</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <div id="status-indicator" class="flex items-center gap-2 px-3 py-1.5 rounded-full glass text-sm">
+              <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+              <span class="text-slate-300">Ready</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div class="grid lg:grid-cols-2 gap-8 h-full">
+        
+        <!-- Left Panel - Chat Interface -->
+        <div class="flex flex-col glass rounded-2xl overflow-hidden">
+          <div class="px-6 py-4 border-b border-white/10">
+            <h2 class="text-lg font-semibold flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              Chat
+            </h2>
+          </div>
+          
+          <!-- Messages Container -->
+          <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4" style="max-height: 500px;">
+            <!-- Welcome Message -->
+            <div class="flex gap-3">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0 flex items-center justify-center">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div class="glass-dark rounded-xl rounded-tl-none px-4 py-3 max-w-[85%]">
+                <p class="text-slate-200">
+                  👋 Welcome to <span class="font-semibold text-blue-400">Agent Battalion</span>! 
+                </p>
+                <p class="text-slate-300 mt-2">
+                  I can generate complete Next.js 15 applications from your description. Just tell me what you want to build!
+                </p>
+                <p class="text-slate-400 text-sm mt-3">
+                  <strong>Try:</strong> "Create a portfolio website with hero section and project gallery"
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Area -->
+          <div class="p-4 border-t border-white/10">
+            <form id="chat-form" class="flex gap-3">
+              <div class="flex-1 relative">
+                <input 
+                  type="text" 
+                  id="prompt-input"
+                  placeholder="Describe the app you want to build..."
+                  class="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none text-white placeholder-slate-400 transition-all"
+                />
+              </div>
+              <button 
+                type="submit"
+                id="generate-btn"
+                class="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 font-semibold transition-all transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Generate
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right Panel - Output -->
+        <div class="flex flex-col glass rounded-2xl overflow-hidden">
+          <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+            <h2 class="text-lg font-semibold flex items-center gap-2">
+              <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+              </svg>
+              Generated Files
+            </h2>
+            <button 
+              id="download-btn"
+              class="hidden px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-sm font-medium transition-all flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Download ZIP
+            </button>
+          </div>
+          
+          <!-- Progress Section -->
+          <div id="progress-section" class="hidden px-6 py-4 border-b border-white/10">
+            <div class="flex items-center gap-4">
+              <div class="relative w-16 h-16">
+                <svg class="w-16 h-16" viewBox="0 0 64 64">
+                  <circle class="text-slate-700" stroke-width="4" stroke="currentColor" fill="transparent" r="28" cx="32" cy="32"/>
+                  <circle 
+                    id="progress-ring"
+                    class="progress-ring text-blue-500" 
+                    stroke-width="4" 
+                    stroke="currentColor" 
+                    fill="transparent" 
+                    r="28" 
+                    cx="32" 
+                    cy="32"
+                    stroke-dasharray="175.93"
+                    stroke-dashoffset="175.93"
+                  />
+                </svg>
+                <span id="progress-percent" class="absolute inset-0 flex items-center justify-center text-sm font-bold">0%</span>
+              </div>
+              <div class="flex-1">
+                <p id="progress-phase" class="font-semibold text-blue-400">Initializing...</p>
+                <p id="progress-message" class="text-sm text-slate-400">Preparing to generate your app</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Files Container -->
+          <div id="files-container" class="flex-1 overflow-y-auto p-6" style="max-height: 500px;">
+            <div id="empty-state" class="h-full flex flex-col items-center justify-center text-center py-12">
+              <div class="w-20 h-20 rounded-2xl bg-slate-800/50 flex items-center justify-center mb-4">
+                <svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold text-slate-300 mb-2">No files yet</h3>
+              <p class="text-slate-500 text-sm max-w-xs">
+                Describe your app idea and click Generate to create a complete Next.js 15 application
+              </p>
+            </div>
+            
+            <div id="files-tree" class="hidden space-y-1">
+              <!-- Files will be rendered here -->
+            </div>
+          </div>
+
+          <!-- File Preview -->
+          <div id="file-preview" class="hidden border-t border-white/10">
+            <div class="px-4 py-2 bg-slate-800/50 flex items-center justify-between">
+              <span id="preview-filename" class="text-sm text-slate-300 font-mono"></span>
+              <button id="close-preview" class="p-1 hover:bg-slate-700 rounded transition-colors">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <pre id="preview-content" class="code-block p-4 text-sm text-slate-300 overflow-auto max-h-64 bg-slate-900/50"></pre>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass-dark mt-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <p class="text-center text-slate-500 text-sm">
+          Powered by Next.js 15 • React 19 • Tailwind CSS
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Initialize Socket.IO connection
+    const socket = io();
+    
+    // DOM Elements
+    const messagesContainer = document.getElementById('messages-container');
+    const chatForm = document.getElementById('chat-form');
+    const promptInput = document.getElementById('prompt-input');
+    const generateBtn = document.getElementById('generate-btn');
+    const progressSection = document.getElementById('progress-section');
+    const progressRing = document.getElementById('progress-ring');
+    const progressPercent = document.getElementById('progress-percent');
+    const progressPhase = document.getElementById('progress-phase');
+    const progressMessage = document.getElementById('progress-message');
+    const filesContainer = document.getElementById('files-container');
+    const emptyState = document.getElementById('empty-state');
+    const filesTree = document.getElementById('files-tree');
+    const downloadBtn = document.getElementById('download-btn');
+    const filePreview = document.getElementById('file-preview');
+    const previewFilename = document.getElementById('preview-filename');
+    const previewContent = document.getElementById('preview-content');
+    const closePreview = document.getElementById('close-preview');
+    const statusIndicator = document.getElementById('status-indicator');
+    
+    // Store for generated files
+    let generatedFiles = [];
+    let currentDownloadUrl = null;
+    
+    // Update progress ring
+    function updateProgress(percent) {
+      const circumference = 2 * Math.PI * 28;
+      const offset = circumference - (percent / 100) * circumference;
+      progressRing.style.strokeDashoffset = offset;
+      progressPercent.textContent = `${Math.round(percent)}%`;
+    }
+    
+    // Add message to chat
+    function addMessage(content, isUser = false) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+      
+      const avatarClass = isUser 
+        ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+        : 'bg-gradient-to-br from-blue-500 to-purple-600';
+      
+      const bubbleClass = isUser
+        ? 'bg-blue-600/30 rounded-tr-none'
+        : 'glass-dark rounded-tl-none';
+      
+      const icon = isUser
+        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>'
+        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>';
+      
+      messageDiv.innerHTML = `
+        <div class="w-8 h-8 rounded-lg ${avatarClass} flex-shrink-0 flex items-center justify-center">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            ${icon}
+          </svg>
+        </div>
+        <div class="${bubbleClass} rounded-xl px-4 py-3 max-w-[85%]">
+          <p class="text-slate-200">${content}</p>
+        </div>
+      `;
+      
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // Add typing indicator
+    function addTypingIndicator() {
+      const id = 'typing-indicator';
+      if (document.getElementById(id)) return;
+      
+      const div = document.createElement('div');
+      div.id = id;
+      div.className = 'flex gap-3';
+      div.innerHTML = `
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0 flex items-center justify-center">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div class="glass-dark rounded-xl rounded-tl-none px-4 py-3 flex items-center gap-1">
+          <span class="typing-dot w-2 h-2 rounded-full bg-blue-400"></span>
+          <span class="typing-dot w-2 h-2 rounded-full bg-blue-400"></span>
+          <span class="typing-dot w-2 h-2 rounded-full bg-blue-400"></span>
+        </div>
+      `;
+      messagesContainer.appendChild(div);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // Remove typing indicator
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typing-indicator');
+      if (indicator) indicator.remove();
+    }
+    
+    // Get file icon based on extension
+    function getFileIcon(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      const icons = {
+        ts: '🟦',
+        tsx: '⚛️',
+        js: '🟨',
+        jsx: '⚛️',
+        json: '📋',
+        css: '🎨',
+        html: '🌐',
+        md: '📝',
+        mjs: '🟨',
+      };
+      return icons[ext] || '📄';
+    }
+    
+    // Render file tree
+    function renderFileTree(files) {
+      emptyState.classList.add('hidden');
+      filesTree.classList.remove('hidden');
+      filesTree.innerHTML = '';
+      
+      // Group files by directory
+      const tree = {};
+      files.forEach((file, index) => {
+        const parts = file.path.split('/');
+        let current = tree;
+        parts.forEach((part, i) => {
+          if (i === parts.length - 1) {
+            if (!current._files) current._files = [];
+            current._files.push({ name: part, fullPath: file.path, index });
+          } else {
+            if (!current[part]) current[part] = {};
+            current = current[part];
+          }
+        });
+      });
+      
+      // Render tree recursively
+      function renderNode(node, container, depth = 0) {
+        // Render directories first
+        Object.keys(node).filter(k => k !== '_files').sort().forEach(dirName => {
+          const dirDiv = document.createElement('div');
+          dirDiv.className = 'space-y-1';
+          dirDiv.innerHTML = `
+            <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer" style="padding-left: ${depth * 16 + 8}px">
+              <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+              </svg>
+              <span class="text-slate-300 text-sm">${dirName}/</span>
+            </div>
+          `;
+          container.appendChild(dirDiv);
+          
+          const childContainer = document.createElement('div');
+          childContainer.className = 'space-y-1';
+          dirDiv.appendChild(childContainer);
+          
+          renderNode(node[dirName], childContainer, depth + 1);
+        });
+        
+        // Render files
+        if (node._files) {
+          node._files.sort((a, b) => a.name.localeCompare(b.name)).forEach(file => {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors';
+            fileDiv.style.paddingLeft = `${depth * 16 + 8}px`;
+            fileDiv.innerHTML = `
+              <span>${getFileIcon(file.name)}</span>
+              <span class="text-slate-300 text-sm">${file.name}</span>
+            `;
+            fileDiv.onclick = () => showFilePreview(file.fullPath, generatedFiles[file.index].content);
+            container.appendChild(fileDiv);
+          });
+        }
+      }
+      
+      renderNode(tree, filesTree);
+    }
+    
+    // Show file preview
+    function showFilePreview(filename, content) {
+      previewFilename.textContent = filename;
+      previewContent.textContent = content;
+      filePreview.classList.remove('hidden');
+    }
+    
+    // Hide file preview
+    closePreview.onclick = () => {
+      filePreview.classList.add('hidden');
+    };
+    
+    // Update status indicator
+    function updateStatus(status, color = 'green') {
+      const colors = {
+        green: 'bg-green-400',
+        yellow: 'bg-yellow-400',
+        blue: 'bg-blue-400',
+        red: 'bg-red-400',
+      };
+      statusIndicator.innerHTML = `
+        <span class="w-2 h-2 rounded-full ${colors[color]} animate-pulse"></span>
+        <span class="text-slate-300">${status}</span>
+      `;
+    }
+    
+    // Handle form submission
+    chatForm.onsubmit = async (e) => {
+      e.preventDefault();
+      
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
+      
+      // Add user message
+      addMessage(prompt, true);
+      promptInput.value = '';
+      
+      // Disable input
+      promptInput.disabled = true;
+      generateBtn.disabled = true;
+      
+      // Show typing indicator
+      addTypingIndicator();
+      
+      // Show progress section
+      progressSection.classList.remove('hidden');
+      updateProgress(0);
+      updateStatus('Generating', 'blue');
+      
+      // Reset file tree
+      filesTree.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+      downloadBtn.classList.add('hidden');
+      filePreview.classList.add('hidden');
+      generatedFiles = [];
+      
+      // Start generation
+      socket.emit('generate:start', { 
+        prompt,
+        projectName: prompt.split(' ').slice(0, 3).join('-')
+      });
+    };
+    
+    // Socket event handlers
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      updateStatus('Ready', 'green');
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+      updateStatus('Disconnected', 'red');
+    });
+    
+    socket.on('generation:progress', (data) => {
+      const { phase, message, progress, files } = data;
+      
+      updateProgress(progress);
+      progressPhase.textContent = phase.charAt(0).toUpperCase() + phase.slice(1);
+      progressMessage.textContent = message;
+      
+      if (files) {
+        generatedFiles = files;
+        renderFileTree(files);
+      }
+    });
+    
+    socket.on('generation:complete', (data) => {
+      const { projectId, downloadUrl, files } = data;
+      
+      removeTypingIndicator();
+      
+      // Add completion message
+      addMessage(`✅ Your app has been generated successfully! I created ${files.length} files for you. Click "Download ZIP" to get your complete Next.js 15 application.`);
+      
+      // Update UI
+      currentDownloadUrl = downloadUrl;
+      downloadBtn.classList.remove('hidden');
+      progressSection.classList.add('hidden');
+      
+      // Enable input
+      promptInput.disabled = false;
+      generateBtn.disabled = false;
+      
+      updateStatus('Ready', 'green');
+    });
+    
+    socket.on('generation:error', (data) => {
+      removeTypingIndicator();
+      addMessage(`❌ Error: ${data.message}`);
+      
+      progressSection.classList.add('hidden');
+      promptInput.disabled = false;
+      generateBtn.disabled = false;
+      
+      updateStatus('Error', 'red');
+      setTimeout(() => updateStatus('Ready', 'green'), 3000);
+    });
+    
+    // Download button handler
+    downloadBtn.onclick = () => {
+      if (currentDownloadUrl) {
+        window.location.href = currentDownloadUrl;
+      }
+    };
+    
+    // Focus input on load
+    promptInput.focus();
+  </script>
+</body>
+</html>
