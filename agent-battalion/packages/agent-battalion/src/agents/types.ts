@@ -280,6 +280,27 @@ export type ProjectStatus =
   | 'complete'
   | 'deployed';
 
+// Data Model for database schema generation
+export interface DataModel {
+  name: string;
+  fields: DataModelField[];
+  relations?: DataModelRelation[];
+}
+
+export interface DataModelField {
+  name: string;
+  type: string;
+  required: boolean;
+  unique?: boolean;
+  default?: unknown;
+}
+
+export interface DataModelRelation {
+  field: string;
+  target: string;
+  type: 'one-to-one' | 'one-to-many' | 'many-to-many';
+}
+
 // Team event for real-time updates
 export interface TeamEvent {
   id: string;
