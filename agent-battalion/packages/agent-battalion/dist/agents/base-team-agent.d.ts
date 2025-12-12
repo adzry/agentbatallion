@@ -2,13 +2,14 @@
  * Base Team Agent - MGX-style Agent Foundation
  *
  * Provides the foundation for all specialized team agents with
- * communication, memory, and tool capabilities.
+ * communication, memory, tool capabilities, and LLM integration.
  */
 import { EventEmitter } from 'events';
 import { AgentProfile, AgentState, AgentTask, AgentHandoff, Artifact, ActionType, TeamEvent, ProjectContext, HandoffContext } from './types.js';
 import { MemoryManager } from '../memory/memory-manager.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import { MessageBus } from '../communication/message-bus.js';
+import { LLMService } from '../llm/llm-service.js';
 export declare abstract class BaseTeamAgent extends EventEmitter {
     protected profile: AgentProfile;
     protected state: AgentState;
@@ -16,7 +17,21 @@ export declare abstract class BaseTeamAgent extends EventEmitter {
     protected tools: ToolRegistry;
     protected messageBus: MessageBus;
     protected projectContext: ProjectContext | null;
+    protected llm: LLMService;
+    protected useRealAI: boolean;
     constructor(profile: AgentProfile, memory: MemoryManager, tools: ToolRegistry, messageBus: MessageBus);
+    /**
+     * Prompt the LLM with a system message and user message
+     * Returns parsed JSON if possible, otherwise raw text
+     */
+    protected promptLLM<T = string>(userMessage: string, options?: {
+        expectJson?: boolean;
+        maxRetries?: number;
+    }): Promise<T>;
+    /**
+     * Check if real AI is enabled
+     */
+    protected isRealAIEnabled(): boolean;
     getProfile(): AgentProfile;
     getState(): AgentState;
     setProjectContext(context: ProjectContext): void;

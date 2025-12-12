@@ -54,33 +54,44 @@ Focus on:
     async reviewCode(files, requirements) {
         this.updateStatus('working');
         this.think('Starting comprehensive code review...');
-        const issues = [];
-        const suggestions = [];
-        // Review each file
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            this.think(`Reviewing: ${file.path}`);
-            const fileIssues = await this.act('review', `Reviewing ${file.path}`, async () => {
-                return this.reviewFile(file);
+        let issues = [];
+        let suggestions = [];
+        if (this.isRealAIEnabled()) {
+            // Use AI for comprehensive code review
+            this.think('Using AI for deep code review...');
+            const aiReport = await this.act('review', 'AI code review', async () => {
+                return this.reviewWithAI(files, requirements);
             });
-            issues.push(...fileIssues);
-            this.updateProgress(((i + 1) / files.length) * 70);
+            issues = aiReport.issues;
+            suggestions = aiReport.suggestions;
+            this.updateProgress(80);
+        }
+        else {
+            // Use rule-based review
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                this.think(`Reviewing: ${file.path}`);
+                const fileIssues = await this.act('review', `Reviewing ${file.path}`, async () => {
+                    return this.reviewFile(file);
+                });
+                issues.push(...fileIssues);
+                this.updateProgress(((i + 1) / files.length) * 70);
+            }
+            // Check accessibility
+            this.think('Checking accessibility...');
+            const a11yIssues = await this.act('review', 'Accessibility check', async () => {
+                return this.checkAccessibility(files);
+            });
+            issues.push(...a11yIssues);
+            this.updateProgress(80);
+            suggestions = this.generateSuggestions(issues, files);
         }
         // Check requirements coverage
         this.think('Checking requirements coverage...');
         const reqCoverage = await this.act('review', 'Checking requirements', async () => {
             return this.checkRequirementsCoverage(files, requirements);
         });
-        this.updateProgress(80);
-        // Check accessibility
-        this.think('Checking accessibility...');
-        const a11yIssues = await this.act('review', 'Accessibility check', async () => {
-            return this.checkAccessibility(files);
-        });
-        issues.push(...a11yIssues);
         this.updateProgress(90);
-        // Generate suggestions
-        suggestions.push(...this.generateSuggestions(issues, files));
         // Calculate scores
         const criticalIssues = issues.filter(i => i.severity === 'critical').length;
         const majorIssues = issues.filter(i => i.severity === 'major').length;
@@ -93,7 +104,7 @@ Focus on:
             coverage: {
                 requirements: reqCoverage,
                 components: this.calculateComponentCoverage(files),
-                accessibility: this.calculateA11yScore(a11yIssues),
+                accessibility: this.calculateA11yScore(issues.filter(i => i.category === 'accessibility')),
             },
         };
         // Create report artifact
@@ -101,6 +112,81 @@ Focus on:
         this.updateStatus('complete');
         this.updateProgress(100);
         return report;
+    }
+    /**
+     * Use AI for comprehensive code review
+     */
+    async reviewWithAI(files, requirements) {
+        // Select key files for AI review (to manage API costs/time)
+        const keyFiles = files.filter(f => f.path.includes('page.tsx') ||
+            f.path.includes('layout.tsx') ||
+            f.path.includes('components/')).slice(0, 5);
+        const filesContext = keyFiles.map(f => `### ${f.path}\n\`\`\`tsx\n${f.content.slice(0, 2000)}${f.content.length > 2000 ? '\n// ... truncated' : ''}\n\`\`\``).join('\n\n');
+        const reqsList = requirements.map(r => `- ${r.description}`).join('\n');
+        const prompt = `Review this Next.js 15 codebase for quality, bugs, accessibility, and best practices:
+
+## Requirements to validate:
+${reqsList}
+
+## Code to review:
+${filesContext}
+
+Return a JSON object with this structure:
+{
+  "issues": [
+    {
+      "severity": "critical" | "major" | "minor" | "info",
+      "category": "bug" | "accessibility" | "performance" | "security" | "style" | "best-practice",
+      "file": "file path",
+      "message": "Description of the issue",
+      "suggestion": "How to fix it"
+    }
+  ],
+  "suggestions": [
+    "General improvement suggestion 1",
+    "General improvement suggestion 2"
+  ]
+}
+
+Check for:
+1. TypeScript type safety issues
+2. React best practices (hooks rules, key props, etc.)
+3. Accessibility issues (WCAG 2.1)
+4. Performance issues (unnecessary re-renders, missing optimizations)
+5. Security vulnerabilities
+6. Missing error handling
+7. Code quality and maintainability
+
+Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
+        try {
+            const aiResponse = await this.promptLLM(prompt, { expectJson: true });
+            const issues = aiResponse.issues.map(issue => ({
+                id: (0, uuid_1.v4)(),
+                severity: issue.severity,
+                category: issue.category,
+                file: issue.file,
+                line: issue.line,
+                message: issue.message,
+                suggestion: issue.suggestion,
+            }));
+            return {
+                issues,
+                suggestions: aiResponse.suggestions || [],
+            };
+        }
+        catch (error) {
+            this.think('AI review failed, falling back to rule-based review');
+            // Fall back to basic review
+            const basicIssues = [];
+            for (const file of files) {
+                basicIssues.push(...this.reviewFile(file));
+            }
+            basicIssues.push(...this.checkAccessibility(files));
+            return {
+                issues: basicIssues,
+                suggestions: this.generateSuggestions(basicIssues, files),
+            };
+        }
     }
     async executeTask(task) {
         switch (task.title) {

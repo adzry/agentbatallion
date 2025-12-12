@@ -23,6 +23,10 @@ export declare class ArchitectAgent extends BaseTeamAgent {
         fileStructure: string[];
         techStack: TechStack;
     }>;
+    /**
+     * Use AI to design architecture
+     */
+    private designWithAI;
     protected executeTask(task: AgentTask): Promise<any>;
     private analyzeForArchitecture;
     private defineTechStack;

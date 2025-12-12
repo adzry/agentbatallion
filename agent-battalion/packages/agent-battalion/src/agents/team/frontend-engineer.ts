@@ -80,13 +80,32 @@ Best practices:
     const totalFiles = fileStructure.length;
     let completedFiles = 0;
 
+    // Files that should be AI-generated when real AI is enabled
+    const aiGeneratedFiles = new Set([
+      'app/page.tsx',
+      'components/sections/hero-section.tsx',
+      'components/sections/features-section.tsx',
+    ]);
+
     // Generate each file
     for (const filePath of fileStructure) {
       this.think(`Generating: ${filePath}`);
 
-      const content = await this.act('code', `Generating ${filePath}`, async () => {
-        return this.generateFileContent(filePath, architecture, designSystem, techStack);
-      });
+      let content: string | null = null;
+
+      // Use AI for key files when real AI is enabled
+      if (this.isRealAIEnabled() && aiGeneratedFiles.has(filePath)) {
+        content = await this.act('code', `AI generating ${filePath}`, async () => {
+          return this.generateWithAI(filePath, architecture, designSystem, techStack);
+        });
+      }
+
+      // Fall back to template-based generation
+      if (!content) {
+        content = await this.act('code', `Generating ${filePath}`, async () => {
+          return this.generateFileContent(filePath, architecture, designSystem, techStack);
+        });
+      }
 
       if (content) {
         const file: ProjectFile = {
@@ -117,6 +136,104 @@ Best practices:
     this.updateStatus('complete');
 
     return files;
+  }
+
+  /**
+   * Generate file content using AI
+   */
+  private async generateWithAI(
+    filePath: string,
+    architecture: ArchitectureSpec,
+    designSystem: DesignSystem,
+    techStack: TechStack
+  ): Promise<string | null> {
+    const projectName = this.projectContext?.name || 'My App';
+    const projectDescription = this.projectContext?.description || 'A modern web application';
+    
+    const colorsList = Object.entries(designSystem.colors)
+      .slice(0, 10)
+      .map(([name, value]) => `${name}: ${value}`)
+      .join(', ');
+
+    let prompt = '';
+
+    if (filePath === 'app/page.tsx') {
+      prompt = `Generate a Next.js 15 home page component for this project:
+
+Project: ${projectName}
+Description: ${projectDescription}
+
+Components available: ${architecture.components.map(c => c.name).join(', ')}
+Design colors: ${colorsList}
+Theme: ${designSystem.theme}
+
+Requirements:
+- Use Next.js 15 App Router (no 'use client' unless needed)
+- Import Header from '@/components/layout/header'
+- Import Footer from '@/components/layout/footer'
+- Create a beautiful hero section with gradient backgrounds
+- Add a features section if the architecture includes it
+- Use Tailwind CSS classes
+- Make it responsive and visually stunning
+- Include proper TypeScript types
+
+Return ONLY the TypeScript/TSX code, no markdown code blocks or explanations.`;
+    } else if (filePath.includes('hero-section')) {
+      prompt = `Generate a beautiful Hero Section React component:
+
+Project: ${projectName}
+Description: ${projectDescription}
+Design colors: ${colorsList}
+Theme: ${designSystem.theme}
+
+Requirements:
+- Export a named function HeroSection
+- Create an eye-catching hero with headline, description, and CTA buttons
+- Add decorative background elements (gradients, blurs)
+- Include subtle animations (fade-in, slide-up)
+- Use Tailwind CSS classes
+- Make it responsive (mobile-first)
+- Include social proof section at the bottom
+- Use proper TypeScript types
+
+Return ONLY the TypeScript/TSX code, no markdown code blocks or explanations.`;
+    } else if (filePath.includes('features-section')) {
+      prompt = `Generate a Features Section React component:
+
+Project: ${projectName}  
+Description: ${projectDescription}
+Design colors: ${colorsList}
+Theme: ${designSystem.theme}
+
+Requirements:
+- Export a named function FeaturesSection
+- Create a grid of 6 feature cards with icons, titles, and descriptions
+- Features should be relevant to: ${projectDescription}
+- Add hover effects on cards
+- Use Tailwind CSS classes
+- Make it responsive (2 cols on mobile, 3 on desktop)
+- Include section header with title and subtitle
+- Use proper TypeScript types
+
+Return ONLY the TypeScript/TSX code, no markdown code blocks or explanations.`;
+    }
+
+    if (!prompt) return null;
+
+    try {
+      const response = await this.promptLLM<string>(prompt);
+      
+      // Clean the response (remove markdown code blocks if present)
+      let cleanedCode = response
+        .replace(/^```(?:tsx|typescript|javascript)?\n?/gm, '')
+        .replace(/```$/gm, '')
+        .trim();
+
+      return cleanedCode;
+    } catch (error) {
+      this.think(`AI generation failed for ${filePath}, using template`);
+      return null;
+    }
   }
 
   protected async executeTask(task: AgentTask): Promise<any> {

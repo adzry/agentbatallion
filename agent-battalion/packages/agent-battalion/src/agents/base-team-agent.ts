@@ -2,7 +2,7 @@
  * Base Team Agent - MGX-style Agent Foundation
  * 
  * Provides the foundation for all specialized team agents with
- * communication, memory, and tool capabilities.
+ * communication, memory, tool capabilities, and LLM integration.
  */
 
 import { v4 as uuidv4 } from 'uuid';
@@ -22,6 +22,7 @@ import {
 import { MemoryManager } from '../memory/memory-manager.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import { MessageBus } from '../communication/message-bus.js';
+import { LLMService, createLLMService, Message as LLMMessage } from '../llm/llm-service.js';
 
 export abstract class BaseTeamAgent extends EventEmitter {
   protected profile: AgentProfile;
@@ -30,6 +31,8 @@ export abstract class BaseTeamAgent extends EventEmitter {
   protected tools: ToolRegistry;
   protected messageBus: MessageBus;
   protected projectContext: ProjectContext | null = null;
+  protected llm: LLMService;
+  protected useRealAI: boolean;
 
   constructor(
     profile: AgentProfile,
@@ -43,6 +46,10 @@ export abstract class BaseTeamAgent extends EventEmitter {
     this.tools = tools;
     this.messageBus = messageBus;
     
+    // Initialize LLM service
+    this.llm = createLLMService();
+    this.useRealAI = process.env.USE_REAL_AI === 'true';
+    
     this.state = {
       agentId: profile.id,
       status: 'idle',
@@ -54,6 +61,63 @@ export abstract class BaseTeamAgent extends EventEmitter {
 
     // Subscribe to messages directed to this agent
     this.messageBus.subscribe(this.profile.id, this.handleMessage.bind(this));
+  }
+
+  /**
+   * Prompt the LLM with a system message and user message
+   * Returns parsed JSON if possible, otherwise raw text
+   */
+  protected async promptLLM<T = string>(
+    userMessage: string,
+    options?: {
+      expectJson?: boolean;
+      maxRetries?: number;
+    }
+  ): Promise<T> {
+    const messages: LLMMessage[] = [
+      { role: 'system', content: this.profile.systemPrompt },
+      { role: 'user', content: userMessage },
+    ];
+
+    const maxRetries = options?.maxRetries ?? 2;
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await this.llm.complete(messages);
+        
+        if (options?.expectJson) {
+          // Extract JSON from the response (handles markdown code blocks)
+          const jsonMatch = response.content.match(/```(?:json)?\s*([\s\S]*?)```/) ||
+                          response.content.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+          
+          if (jsonMatch) {
+            return JSON.parse(jsonMatch[1].trim()) as T;
+          }
+          
+          // Try parsing the whole response as JSON
+          return JSON.parse(response.content) as T;
+        }
+        
+        return response.content as T;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        this.think(`LLM attempt ${attempt + 1} failed: ${lastError.message}`);
+        
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        }
+      }
+    }
+
+    throw lastError || new Error('LLM prompt failed');
+  }
+
+  /**
+   * Check if real AI is enabled
+   */
+  protected isRealAIEnabled(): boolean {
+    return this.useRealAI && this.llm.isRealLLM();
   }
 
   // Get agent profile

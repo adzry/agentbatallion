@@ -53,25 +53,93 @@ Always think from the user's perspective and ensure requirements are:
     async analyzeRequest(userRequest) {
         this.updateStatus('thinking');
         this.think('Analyzing user request to understand core requirements...');
-        // Extract key information from the request
-        const analysis = await this.act('think', 'Analyzing user requirements', async () => {
-            return this.extractRequirements(userRequest);
-        });
-        this.updateProgress(30);
-        // Create structured requirements
-        const requirements = await this.act('plan', 'Creating structured requirements', async () => {
-            return this.structureRequirements(analysis, userRequest);
-        });
-        this.updateProgress(60);
-        // Define project context
-        const projectContext = await this.act('plan', 'Defining project context', async () => {
-            return this.defineProjectContext(userRequest, requirements);
-        });
+        let requirements;
+        let projectContext;
+        if (this.isRealAIEnabled()) {
+            // Use real AI for requirement analysis
+            this.think('Using AI to analyze requirements...');
+            const aiAnalysis = await this.act('think', 'AI analyzing requirements', async () => {
+                return this.analyzeWithAI(userRequest);
+            });
+            this.updateProgress(50);
+            requirements = aiAnalysis.requirements;
+            projectContext = aiAnalysis.projectContext;
+        }
+        else {
+            // Use template-based analysis
+            const analysis = await this.act('think', 'Analyzing user requirements', async () => {
+                return this.extractRequirements(userRequest);
+            });
+            this.updateProgress(30);
+            requirements = await this.act('plan', 'Creating structured requirements', async () => {
+                return this.structureRequirements(analysis, userRequest);
+            });
+            this.updateProgress(60);
+            projectContext = await this.act('plan', 'Defining project context', async () => {
+                return this.defineProjectContext(userRequest, requirements);
+            });
+        }
         this.updateProgress(90);
         // Create PRD artifact
         this.createArtifact('requirement', 'Product Requirements Document', this.generatePRD(requirements, projectContext), 'docs/PRD.md');
         this.updateStatus('complete');
         this.updateProgress(100);
+        return { requirements, projectContext };
+    }
+    /**
+     * Use AI to analyze requirements
+     */
+    async analyzeWithAI(userRequest) {
+        const prompt = `Analyze this user request and extract requirements:
+
+"${userRequest}"
+
+Return a JSON object with this exact structure:
+{
+  "projectName": "Name of the project",
+  "projectDescription": "Brief description",
+  "requirements": [
+    {
+      "type": "functional" | "non_functional" | "constraint",
+      "priority": "must" | "should" | "could" | "wont",
+      "description": "Clear description of the requirement",
+      "acceptanceCriteria": ["Criteria 1", "Criteria 2"]
+    }
+  ],
+  "techStack": {
+    "frontend": {
+      "framework": "Next.js 15",
+      "language": "TypeScript",
+      "styling": "Tailwind CSS",
+      "stateManagement": "React hooks"
+    }
+  }
+}
+
+Include at least 5 requirements covering:
+- Core functionality (must have)
+- User experience features (should have)
+- Performance requirements (non-functional)
+- Any constraints mentioned
+
+Be specific and actionable.`;
+        const aiResponse = await this.promptLLM(prompt, { expectJson: true });
+        // Convert AI response to internal format
+        const requirements = aiResponse.requirements.map((req) => ({
+            id: (0, uuid_1.v4)(),
+            type: req.type,
+            priority: req.priority,
+            description: req.description,
+            acceptanceCriteria: req.acceptanceCriteria || [],
+            status: 'proposed',
+        }));
+        const projectContext = {
+            name: aiResponse.projectName,
+            description: aiResponse.projectDescription,
+            requirements,
+            techStack: aiResponse.techStack,
+            status: 'planning',
+        };
         return { requirements, projectContext };
     }
     async executeTask(task) {
