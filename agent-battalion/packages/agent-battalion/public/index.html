@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Battalion - App Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        battalion: {
+                            bg: '#0f172a', // slate-900
+                            card: '#1e293b', // slate-800
+                            accent: '#3b82f6', // blue-500
+                            text: '#f1f5f9', // slate-100
+                            muted: '#94a3b8' // slate-400
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .code-block {
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="bg-battalion-card border-b border-slate-700 p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-battalion-accent">Agent Battalion</h1>
+            <div class="text-sm text-battalion-muted">AI-Powered App Generator</div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 container mx-auto p-4 flex gap-4 overflow-hidden">
+        
+        <!-- Chat Interface -->
+        <div class="w-1/3 flex flex-col bg-battalion-card rounded-lg border border-slate-700 shadow-xl">
+            <div class="p-4 border-b border-slate-700 font-semibold">Specification Chat</div>
+            
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div class="flex flex-col space-y-2">
+                    <div class="bg-slate-700 p-3 rounded-lg rounded-tl-none self-start max-w-[90%]">
+                        Hello! Describe the application you want to build.
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-700 bg-slate-900/50">
+                <div class="flex flex-col gap-2">
+                    <textarea id="spec-input" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:outline-none focus:border-battalion-accent resize-none h-24" placeholder="E.g., A task management app with Next.js..."></textarea>
+                    <button id="generate-btn" class="w-full bg-battalion-accent hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-200">
+                        Generate App
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Output Display -->
+        <div class="w-2/3 flex flex-col gap-4">
+            
+            <!-- Progress Log -->
+            <div class="h-1/3 bg-battalion-card rounded-lg border border-slate-700 shadow-xl flex flex-col">
+                <div class="p-4 border-b border-slate-700 font-semibold flex justify-between">
+                    <span>Generation Progress</span>
+                    <span id="status-indicator" class="text-xs px-2 py-1 rounded bg-slate-700">Idle</span>
+                </div>
+                <div id="progress-log" class="flex-1 overflow-y-auto p-4 font-mono text-sm text-green-400 space-y-1">
+                    <!-- Logs go here -->
+                </div>
+            </div>
+
+            <!-- Generated Files -->
+            <div class="flex-1 bg-battalion-card rounded-lg border border-slate-700 shadow-xl flex flex-col overflow-hidden">
+                <div class="p-4 border-b border-slate-700 font-semibold flex justify-between items-center">
+                    <span>Generated Code</span>
+                    <button id="download-btn" class="hidden bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded transition">
+                        Download Source
+                    </button>
+                </div>
+                <div class="flex flex-1 overflow-hidden">
+                    <!-- File Explorer Sidebar -->
+                    <div class="w-1/4 bg-slate-900/50 border-r border-slate-700 overflow-y-auto p-2">
+                        <ul id="file-list" class="space-y-1 text-sm text-battalion-muted">
+                            <!-- File list items -->
+                        </ul>
+                    </div>
+                    <!-- Code Editor View -->
+                    <div class="w-3/4 bg-[#1e1e1e] overflow-auto relative">
+                        <pre class="p-4 m-0"><code id="code-viewer" class="language-typescript text-sm text-gray-300">Select a file to view code...</code></pre>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const socket = io();
+        const chatMessages = document.getElementById('chat-messages');
+        const specInput = document.getElementById('spec-input');
+        const generateBtn = document.getElementById('generate-btn');
+        const progressLog = document.getElementById('progress-log');
+        const fileList = document.getElementById('file-list');
+        const codeViewer = document.getElementById('code-viewer');
+        const statusIndicator = document.getElementById('status-indicator');
+        const downloadBtn = document.getElementById('download-btn');
+
+        let generatedData = null;
+
+        function addMessage(text, isUser = false) {
+            const div = document.createElement('div');
+            div.className = `p-3 rounded-lg max-w-[90%] ${isUser ? 'bg-battalion-accent text-white self-end rounded-tr-none' : 'bg-slate-700 self-start rounded-tl-none'}`;
+            div.textContent = text;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex flex-col space-y-2';
+            wrapper.appendChild(div);
+            chatMessages.appendChild(wrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addLog(text) {
+            const div = document.createElement('div');
+            div.textContent = `> ${text}`;
+            progressLog.appendChild(div);
+            progressLog.scrollTop = progressLog.scrollHeight;
+        }
+
+        generateBtn.addEventListener('click', () => {
+            const spec = specInput.value.trim();
+            if (!spec) return;
+
+            // UI Updates
+            addMessage(spec, true);
+            specInput.value = '';
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            progressLog.innerHTML = '';
+            fileList.innerHTML = '';
+            codeViewer.textContent = 'Generating files...';
+            statusIndicator.textContent = 'Generating';
+            statusIndicator.className = 'text-xs px-2 py-1 rounded bg-yellow-600';
+            downloadBtn.classList.add('hidden');
+
+            // Socket Emit
+            socket.emit('generate-app', spec);
+        });
+
+        socket.on('progress', (msg) => {
+            addLog(msg);
+        });
+
+        socket.on('complete', (files) => {
+            generatedData = files;
+            statusIndicator.textContent = 'Completed';
+            statusIndicator.className = 'text-xs px-2 py-1 rounded bg-green-600';
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate App';
+            downloadBtn.classList.remove('hidden');
+
+            renderFileList(files);
+            
+            // Auto-select package.json
+            if (files['package.json']) {
+                displayFile('package.json', files['package.json']);
+            }
+        });
+
+        socket.on('error', (err) => {
+            addLog(`ERROR: ${err}`);
+            statusIndicator.textContent = 'Error';
+            statusIndicator.className = 'text-xs px-2 py-1 rounded bg-red-600';
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate App';
+        });
+
+        function renderFileList(files) {
+            fileList.innerHTML = '';
+            Object.keys(files).forEach(filename => {
+                const li = document.createElement('li');
+                li.className = 'cursor-pointer hover:bg-slate-700 hover:text-white px-2 py-1 rounded truncate transition';
+                li.textContent = filename;
+                li.onclick = () => displayFile(filename, files[filename]);
+                fileList.appendChild(li);
+            });
+        }
+
+        function displayFile(filename, content) {
+            // Update active state in list
+            Array.from(fileList.children).forEach(child => {
+                if (child.textContent === filename) {
+                    child.classList.add('bg-slate-700', 'text-white');
+                } else {
+                    child.classList.remove('bg-slate-700', 'text-white');
+                }
+            });
+            codeViewer.textContent = content;
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            if (!generatedData) return;
+            
+            // Simple approach: Download as a single JSON file for now, 
+            // or we could use JSZip if we had it.
+            // Since I can't easily add JSZip to this file without external CDN, I'll do a simple text dump or JSON.
+            // For better UX, let's create a JSON blob.
+            
+            const blob = new Blob([JSON.stringify(generatedData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'agent-battalion-generated.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>
