@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Battalion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              panel: "#0b1220",
+              panel2: "#0f172a",
+              border: "#243041",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-100">
+    <div class="mx-auto max-w-6xl px-4 py-8">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight">Agent Battalion</h1>
+          <p class="mt-1 text-sm text-slate-400">AI-powered full-stack app generator (Phase 1 mock)</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div id="connDot" class="h-2.5 w-2.5 rounded-full bg-slate-600"></div>
+          <span id="connText" class="text-xs text-slate-400">Disconnected</span>
+        </div>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <!-- Chat / control panel -->
+        <div class="rounded-2xl border border-border bg-panel p-4 shadow">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-200">Specification</h2>
+            <div class="text-xs text-slate-400">WebSocket progress + mock generator</div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 gap-3">
+            <label class="block">
+              <span class="text-xs text-slate-300">App name</span>
+              <input
+                id="appName"
+                class="mt-1 w-full rounded-xl border border-border bg-panel2 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                value="agent-battalion-app"
+                placeholder="my-next-app"
+              />
+            </label>
+
+            <label class="block">
+              <span class="text-xs text-slate-300">What should we build?</span>
+              <textarea
+                id="spec"
+                class="mt-1 h-40 w-full resize-none rounded-xl border border-border bg-panel2 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                placeholder="Example: Build a SaaS landing page with pricing, FAQ, and a signup form..."
+              >Build a modern landing page for a productivity app called "Battalion" with a hero section, features grid, testimonials, and a CTA footer.</textarea>
+            </label>
+
+            <div class="flex flex-wrap items-center gap-3">
+              <button
+                id="generateBtn"
+                class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Generate App
+              </button>
+              <button
+                id="clearBtn"
+                class="rounded-xl border border-border bg-panel2 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-slate-500"
+              >
+                Clear
+              </button>
+              <div class="ml-auto flex items-center gap-2">
+                <div class="h-2 w-40 overflow-hidden rounded-full bg-slate-800">
+                  <div id="bar" class="h-2 w-0 bg-emerald-500 transition-all"></div>
+                </div>
+                <span id="pct" class="w-10 text-right text-xs text-slate-400">0%</span>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-border bg-panel2 p-3">
+              <div class="flex items-center justify-between">
+                <div class="text-xs font-semibold text-slate-200">Run log</div>
+                <div id="runId" class="text-[11px] text-slate-500"></div>
+              </div>
+              <div id="log" class="mt-2 h-40 overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-slate-300"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output panel -->
+        <div class="rounded-2xl border border-border bg-panel p-4 shadow">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-sm font-semibold text-slate-200">Generated files</h2>
+            <div class="flex items-center gap-2">
+              <button
+                id="downloadBtn"
+                class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled
+              >
+                Download source (.zip)
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
+            <div class="lg:col-span-2">
+              <div class="text-xs font-semibold text-slate-400">Files</div>
+              <div id="fileList" class="mt-2 max-h-[420px] overflow-auto rounded-xl border border-border bg-panel2 p-2"></div>
+            </div>
+            <div class="lg:col-span-3">
+              <div class="flex items-center justify-between">
+                <div class="text-xs font-semibold text-slate-400">Preview</div>
+                <div id="activeFile" class="text-[11px] text-slate-500"></div>
+              </div>
+              <pre
+                id="filePreview"
+                class="mt-2 max-h-[420px] overflow-auto rounded-xl border border-border bg-panel2 p-3 text-xs text-slate-200"
+              ></pre>
+            </div>
+          </div>
+
+          <div class="mt-4 text-xs text-slate-500">
+            Note: download is client-side (JSZip). The server only streams progress and returns file contents.
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 text-xs text-slate-600">
+        Server: <code class="rounded bg-slate-900 px-1 py-0.5">localhost:4000</code> · Socket.IO: <code class="rounded bg-slate-900 px-1 py-0.5">/socket.io</code>
+      </div>
+    </div>
+
+    <!-- Socket.IO client is served by the server -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- JSZip for client-side zip download -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+    <script>
+      const el = (id) => document.getElementById(id);
+      const logEl = el("log");
+      const fileListEl = el("fileList");
+      const filePreviewEl = el("filePreview");
+      const activeFileEl = el("activeFile");
+      const connDot = el("connDot");
+      const connText = el("connText");
+      const bar = el("bar");
+      const pct = el("pct");
+      const runIdEl = el("runId");
+      const downloadBtn = el("downloadBtn");
+      const generateBtn = el("generateBtn");
+      const clearBtn = el("clearBtn");
+
+      /** @type {{path: string, contents: string}[]} */
+      let generatedFiles = [];
+      let latestRunId = "";
+
+      function appendLog(line) {
+        const ts = new Date().toLocaleTimeString();
+        logEl.textContent += `[${ts}] ${line}\n`;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function setProgress(percentValue) {
+        const p = Math.max(0, Math.min(100, Number(percentValue || 0)));
+        bar.style.width = `${p}%`;
+        pct.textContent = `${p}%`;
+      }
+
+      function renderFileList() {
+        fileListEl.innerHTML = "";
+        if (!generatedFiles.length) {
+          const empty = document.createElement("div");
+          empty.className = "p-3 text-xs text-slate-500";
+          empty.textContent = "No files yet.";
+          fileListEl.appendChild(empty);
+          return;
+        }
+
+        for (const f of generatedFiles) {
+          const btn = document.createElement("button");
+          btn.className =
+            "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-800";
+          btn.innerHTML = `<span class="truncate">${escapeHtml(f.path)}</span><span class="ml-3 text-[11px] text-slate-500">${f.contents.length} chars</span>`;
+          btn.addEventListener("click", () => {
+            activeFileEl.textContent = f.path;
+            filePreviewEl.textContent = f.contents;
+          });
+          fileListEl.appendChild(btn);
+        }
+
+        // auto-open first file
+        if (generatedFiles[0]) {
+          activeFileEl.textContent = generatedFiles[0].path;
+          filePreviewEl.textContent = generatedFiles[0].contents;
+        }
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      async function downloadZip() {
+        if (!generatedFiles.length) return;
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = "Zipping...";
+
+        try {
+          const zip = new JSZip();
+          for (const f of generatedFiles) {
+            zip.file(f.path, f.contents);
+          }
+          const blob = await zip.generateAsync({ type: "blob" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${(el("appName").value || "generated-app").trim() || "generated-app"}.zip`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } finally {
+          downloadBtn.textContent = "Download source (.zip)";
+          downloadBtn.disabled = !generatedFiles.length;
+        }
+      }
+
+      const socket = window.io({
+        transports: ["websocket", "polling"],
+      });
+
+      socket.on("connect", () => {
+        connDot.className = "h-2.5 w-2.5 rounded-full bg-emerald-500";
+        connText.textContent = "Connected";
+        appendLog("Connected");
+      });
+
+      socket.on("disconnect", () => {
+        connDot.className = "h-2.5 w-2.5 rounded-full bg-rose-500";
+        connText.textContent = "Disconnected";
+        appendLog("Disconnected");
+      });
+
+      socket.on("progress", (evt) => {
+        if (evt?.runId) {
+          latestRunId = evt.runId;
+          runIdEl.textContent = `runId: ${evt.runId}`;
+        }
+        if (typeof evt?.percent === "number") setProgress(evt.percent);
+        const stage = evt?.stage ? String(evt.stage) : "progress";
+        const msg = evt?.message ? String(evt.message) : "";
+        appendLog(`${stage}: ${msg}`.trim());
+      });
+
+      socket.on("generation_result", (evt) => {
+        if (!evt?.ok) return;
+        latestRunId = evt?.runId || latestRunId;
+        const result = evt?.result;
+        generatedFiles = Array.isArray(result?.files) ? result.files : [];
+        appendLog(`done: received ${generatedFiles.length} files`);
+        renderFileList();
+        downloadBtn.disabled = !generatedFiles.length;
+        generateBtn.disabled = false;
+      });
+
+      socket.on("generation_error", (evt) => {
+        appendLog(`error: ${evt?.error || "Unknown error"}`);
+        generateBtn.disabled = false;
+      });
+
+      generateBtn.addEventListener("click", () => {
+        const spec = el("spec").value.trim();
+        const appName = el("appName").value.trim();
+
+        if (!spec) {
+          appendLog("error: please enter a spec");
+          return;
+        }
+
+        // reset UI
+        generatedFiles = [];
+        renderFileList();
+        filePreviewEl.textContent = "";
+        activeFileEl.textContent = "";
+        downloadBtn.disabled = true;
+        setProgress(0);
+
+        appendLog("request: generate_app");
+        generateBtn.disabled = true;
+
+        socket.emit("generate_app", { spec, appName }, (ack) => {
+          if (ack?.ok && ack?.runId) {
+            latestRunId = ack.runId;
+            runIdEl.textContent = `runId: ${ack.runId}`;
+          }
+          if (ack?.ok === false) {
+            appendLog(`error: ${ack?.error || "Request failed"}`);
+            generateBtn.disabled = false;
+          }
+        });
+      });
+
+      clearBtn.addEventListener("click", () => {
+        logEl.textContent = "";
+        generatedFiles = [];
+        latestRunId = "";
+        runIdEl.textContent = "";
+        setProgress(0);
+        renderFileList();
+        filePreviewEl.textContent = "";
+        activeFileEl.textContent = "";
+        downloadBtn.disabled = true;
+        generateBtn.disabled = false;
+      });
+
+      downloadBtn.addEventListener("click", downloadZip);
+
+      // initial
+      renderFileList();
+      appendLog("Opening socket...");
+    </script>
+  </body>
+</html>

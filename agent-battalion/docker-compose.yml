@@ -1,0 +1,11 @@
+services:
+  agent-battalion:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+    command: sh -lc "npm install && npm run dev"

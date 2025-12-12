@@ -1,0 +1,13 @@
+{
+  "name": "agent-battalion",
+  "private": true,
+  "packageManager": "npm@10.9.2",
+  "workspaces": [
+    "packages/agent-battalion",
+    "packages/agent-battalion-mcp"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @meta/agent-battalion",
+    "start": "npm run start -w @meta/agent-battalion"
+  }
+}
