@@ -1,0 +1,391 @@
+/**
+ * Product Manager Agent
+ * 
+ * Responsible for:
+ * - Understanding user requirements
+ * - Creating product specifications
+ * - Defining user stories and acceptance criteria
+ * - Prioritizing features
+ * - Coordinating with the team
+ */
+
+import { v4 as uuidv4 } from 'uuid';
+import { BaseTeamAgent } from '../base-team-agent.js';
+import {
+  AgentProfile,
+  AgentTask,
+  Requirement,
+  Artifact,
+  ProjectContext,
+} from '../types.js';
+import { MemoryManager } from '../../memory/memory-manager.js';
+import { ToolRegistry } from '../../tools/tool-registry.js';
+import { MessageBus } from '../../communication/message-bus.js';
+
+export class ProductManagerAgent extends BaseTeamAgent {
+  constructor(memory: MemoryManager, tools: ToolRegistry, messageBus: MessageBus) {
+    const profile: AgentProfile = {
+      id: 'pm-agent',
+      name: 'Alex',
+      role: 'product_manager',
+      avatar: '👔',
+      description: 'Product Manager - Transforms user needs into actionable specifications',
+      capabilities: {
+        canWriteCode: false,
+        canDesign: false,
+        canTest: false,
+        canDeploy: false,
+        canResearch: true,
+        canReview: true,
+      },
+      personality: 'Analytical, user-focused, and detail-oriented. Excellent at breaking down complex requirements.',
+      systemPrompt: `You are Alex, an experienced Product Manager AI agent.
+Your responsibilities:
+1. Analyze user requests to understand their true needs
+2. Break down requirements into clear, actionable specifications
+3. Define user stories with acceptance criteria
+4. Prioritize features using MoSCoW method
+5. Create product requirement documents (PRDs)
+6. Coordinate with the development team
+
+Always think from the user's perspective and ensure requirements are:
+- Clear and unambiguous
+- Testable and measurable
+- Prioritized appropriately
+- Technically feasible`,
+    };
+
+    super(profile, memory, tools, messageBus);
+  }
+
+  /**
+   * Analyze user request and create requirements
+   */
+  async analyzeRequest(userRequest: string): Promise<{
+    requirements: Requirement[];
+    projectContext: Partial<ProjectContext>;
+  }> {
+    this.updateStatus('thinking');
+    this.think('Analyzing user request to understand core requirements...');
+
+    // Extract key information from the request
+    const analysis = await this.act('think', 'Analyzing user requirements', async () => {
+      return this.extractRequirements(userRequest);
+    });
+
+    this.updateProgress(30);
+
+    // Create structured requirements
+    const requirements = await this.act('plan', 'Creating structured requirements', async () => {
+      return this.structureRequirements(analysis, userRequest);
+    });
+
+    this.updateProgress(60);
+
+    // Define project context
+    const projectContext = await this.act('plan', 'Defining project context', async () => {
+      return this.defineProjectContext(userRequest, requirements);
+    });
+
+    this.updateProgress(90);
+
+    // Create PRD artifact
+    this.createArtifact(
+      'requirement',
+      'Product Requirements Document',
+      this.generatePRD(requirements, projectContext),
+      'docs/PRD.md'
+    );
+
+    this.updateStatus('complete');
+    this.updateProgress(100);
+
+    return { requirements, projectContext };
+  }
+
+  protected async executeTask(task: AgentTask): Promise<any> {
+    switch (task.title) {
+      case 'analyze_requirements':
+        return await this.analyzeRequest(task.description);
+      case 'refine_requirements':
+        return await this.refineRequirements(task);
+      case 'prioritize_features':
+        return await this.prioritizeFeatures(task);
+      default:
+        throw new Error(`Unknown task: ${task.title}`);
+    }
+  }
+
+  private extractRequirements(userRequest: string): {
+    appType: string;
+    features: string[];
+    constraints: string[];
+    targetUsers: string;
+  } {
+    const lowerRequest = userRequest.toLowerCase();
+
+    // Determine app type
+    let appType = 'web application';
+    if (lowerRequest.includes('dashboard')) appType = 'dashboard application';
+    else if (lowerRequest.includes('e-commerce') || lowerRequest.includes('store')) appType = 'e-commerce platform';
+    else if (lowerRequest.includes('blog')) appType = 'blog/content platform';
+    else if (lowerRequest.includes('portfolio')) appType = 'portfolio website';
+    else if (lowerRequest.includes('saas')) appType = 'SaaS application';
+    else if (lowerRequest.includes('landing')) appType = 'landing page';
+
+    // Extract features
+    const features: string[] = [];
+    const featurePatterns = [
+      { pattern: /hero\s*(section)?/i, feature: 'Hero section with call-to-action' },
+      { pattern: /auth(entication)?|login|signup/i, feature: 'User authentication system' },
+      { pattern: /dashboard/i, feature: 'Admin/User dashboard' },
+      { pattern: /payment|checkout|cart/i, feature: 'Payment and checkout flow' },
+      { pattern: /blog|post|article/i, feature: 'Blog/Content management' },
+      { pattern: /search/i, feature: 'Search functionality' },
+      { pattern: /profile/i, feature: 'User profiles' },
+      { pattern: /notification/i, feature: 'Notification system' },
+      { pattern: /chat|message/i, feature: 'Messaging/Chat feature' },
+      { pattern: /gallery|portfolio|showcase/i, feature: 'Image/Project gallery' },
+      { pattern: /contact/i, feature: 'Contact form' },
+      { pattern: /testimonial|review/i, feature: 'Testimonials/Reviews section' },
+      { pattern: /pricing/i, feature: 'Pricing page' },
+      { pattern: /faq/i, feature: 'FAQ section' },
+      { pattern: /analytics/i, feature: 'Analytics integration' },
+      { pattern: /dark\s*mode|theme/i, feature: 'Dark mode support' },
+      { pattern: /responsive|mobile/i, feature: 'Responsive design' },
+      { pattern: /animation/i, feature: 'Smooth animations' },
+    ];
+
+    for (const { pattern, feature } of featurePatterns) {
+      if (pattern.test(userRequest)) {
+        features.push(feature);
+      }
+    }
+
+    // Add default features
+    if (!features.some(f => f.includes('Responsive'))) {
+      features.push('Responsive design');
+    }
+
+    // Extract constraints
+    const constraints: string[] = [];
+    if (lowerRequest.includes('fast') || lowerRequest.includes('performance')) {
+      constraints.push('High performance requirements');
+    }
+    if (lowerRequest.includes('accessible') || lowerRequest.includes('a11y')) {
+      constraints.push('WCAG accessibility compliance');
+    }
+    if (lowerRequest.includes('seo')) {
+      constraints.push('SEO optimization required');
+    }
+
+    // Determine target users
+    let targetUsers = 'General users';
+    if (lowerRequest.includes('developer')) targetUsers = 'Developers';
+    else if (lowerRequest.includes('business')) targetUsers = 'Business professionals';
+    else if (lowerRequest.includes('customer')) targetUsers = 'Customers/End users';
+
+    return { appType, features, constraints, targetUsers };
+  }
+
+  private structureRequirements(
+    analysis: ReturnType<typeof this.extractRequirements>,
+    userRequest: string
+  ): Requirement[] {
+    const requirements: Requirement[] = [];
+
+    // Core app requirement
+    requirements.push({
+      id: uuidv4(),
+      type: 'functional',
+      priority: 'must',
+      description: `Build a ${analysis.appType} based on user specifications`,
+      acceptanceCriteria: [
+        'Application loads without errors',
+        'All primary features are functional',
+        'Responsive on mobile and desktop',
+      ],
+      status: 'approved',
+    });
+
+    // Feature requirements
+    for (const feature of analysis.features) {
+      const priority = this.determinePriority(feature);
+      requirements.push({
+        id: uuidv4(),
+        type: 'functional',
+        priority,
+        description: feature,
+        acceptanceCriteria: this.generateAcceptanceCriteria(feature),
+        status: 'proposed',
+      });
+    }
+
+    // Non-functional requirements
+    requirements.push({
+      id: uuidv4(),
+      type: 'non_functional',
+      priority: 'should',
+      description: 'Application should load within 3 seconds',
+      acceptanceCriteria: ['First contentful paint < 1.5s', 'Time to interactive < 3s'],
+      status: 'approved',
+    });
+
+    requirements.push({
+      id: uuidv4(),
+      type: 'non_functional',
+      priority: 'should',
+      description: 'Mobile-responsive design with touch support',
+      acceptanceCriteria: ['Works on screens 320px and above', 'Touch-friendly buttons and controls'],
+      status: 'approved',
+    });
+
+    // Constraint requirements
+    for (const constraint of analysis.constraints) {
+      requirements.push({
+        id: uuidv4(),
+        type: 'constraint',
+        priority: 'must',
+        description: constraint,
+        status: 'approved',
+      });
+    }
+
+    return requirements;
+  }
+
+  private determinePriority(feature: string): Requirement['priority'] {
+    const mustHave = ['hero', 'responsive', 'navigation', 'layout'];
+    const shouldHave = ['authentication', 'search', 'contact', 'dark mode'];
+    const couldHave = ['animation', 'analytics', 'chat', 'notification'];
+
+    const lowerFeature = feature.toLowerCase();
+
+    if (mustHave.some(kw => lowerFeature.includes(kw))) return 'must';
+    if (shouldHave.some(kw => lowerFeature.includes(kw))) return 'should';
+    if (couldHave.some(kw => lowerFeature.includes(kw))) return 'could';
+    return 'should';
+  }
+
+  private generateAcceptanceCriteria(feature: string): string[] {
+    const criteria: string[] = ['Feature is visible and accessible'];
+
+    if (feature.toLowerCase().includes('form')) {
+      criteria.push('Form validates input correctly');
+      criteria.push('Form submits successfully');
+      criteria.push('Error messages are clear');
+    }
+
+    if (feature.toLowerCase().includes('button') || feature.toLowerCase().includes('cta')) {
+      criteria.push('Button is clickable and has hover state');
+      criteria.push('Button performs expected action');
+    }
+
+    if (feature.toLowerCase().includes('auth')) {
+      criteria.push('Users can register and login');
+      criteria.push('Session is maintained correctly');
+      criteria.push('Logout works properly');
+    }
+
+    return criteria;
+  }
+
+  private defineProjectContext(
+    userRequest: string,
+    requirements: Requirement[]
+  ): Partial<ProjectContext> {
+    const analysis = this.extractRequirements(userRequest);
+
+    return {
+      name: this.extractProjectName(userRequest),
+      description: userRequest,
+      requirements,
+      techStack: {
+        frontend: {
+          framework: 'Next.js 15',
+          language: 'TypeScript',
+          styling: 'Tailwind CSS',
+          stateManagement: 'React hooks',
+        },
+      },
+      status: 'planning',
+    };
+  }
+
+  private extractProjectName(userRequest: string): string {
+    const patterns = [
+      /(?:build|create|make|generate)\s+(?:a|an|the)?\s*(.+?)\s*(?:app|application|website|site|platform)/i,
+      /(.+?)\s*(?:app|application|website|site|platform)/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = userRequest.match(pattern);
+      if (match && match[1]) {
+        return match[1]
+          .trim()
+          .split(' ')
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ');
+      }
+    }
+
+    return 'New Project';
+  }
+
+  private generatePRD(requirements: Requirement[], context: Partial<ProjectContext>): string {
+    const mustHave = requirements.filter(r => r.priority === 'must');
+    const shouldHave = requirements.filter(r => r.priority === 'should');
+    const couldHave = requirements.filter(r => r.priority === 'could');
+
+    return `# Product Requirements Document
+
+## Project: ${context.name}
+
+### Overview
+${context.description}
+
+### Tech Stack
+- **Framework:** ${context.techStack?.frontend.framework}
+- **Language:** ${context.techStack?.frontend.language}
+- **Styling:** ${context.techStack?.frontend.styling}
+
+---
+
+## Requirements
+
+### Must Have (P0)
+${mustHave.map(r => `- ${r.description}`).join('\n')}
+
+### Should Have (P1)
+${shouldHave.map(r => `- ${r.description}`).join('\n')}
+
+### Could Have (P2)
+${couldHave.map(r => `- ${r.description}`).join('\n')}
+
+---
+
+## Acceptance Criteria
+
+${requirements.filter(r => r.acceptanceCriteria).map(r => `
+### ${r.description}
+${r.acceptanceCriteria?.map(c => `- [ ] ${c}`).join('\n')}
+`).join('\n')}
+
+---
+
+*Generated by Agent Battalion - Product Manager Agent*
+`;
+  }
+
+  private async refineRequirements(task: AgentTask): Promise<Requirement[]> {
+    // Refine existing requirements based on feedback
+    const currentReqs = await this.memory.recall('requirements', 10);
+    return currentReqs as Requirement[];
+  }
+
+  private async prioritizeFeatures(task: AgentTask): Promise<Requirement[]> {
+    // Re-prioritize features
+    const currentReqs = await this.memory.recall('requirements', 10);
+    return currentReqs as Requirement[];
+  }
+}

@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Battalion - AI App Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
+            surface: { DEFAULT: '#1e293b', hover: '#334155' },
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s ease-in-out infinite',
+            'bounce-slow': 'bounce 2s ease-in-out infinite',
+            'typing': 'typing 1.5s ease-in-out infinite',
+            'slide-in': 'slideIn 0.3s ease-out',
+          },
+          keyframes: {
+            typing: { '0%, 100%': { opacity: 0.3 }, '50%': { opacity: 1 } },
+            slideIn: { '0%': { transform: 'translateY(10px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } },
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); min-height: 100vh; }
+    .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-dark { background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .gradient-text { background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .typing-dot { animation: typing 1.4s infinite ease-in-out; }
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.5); }
+    ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.5); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.8); }
+    .agent-card.active { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+    .agent-card.active .status-dot { animation: pulse 1s infinite; }
+    .code-block { font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; }
+  </style>
+</head>
+<body class="dark text-white">
+  <div id="app" class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="glass-dark sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold gradient-text">Agent Battalion</h1>
+              <p class="text-xs text-slate-400">MGX-Style Multi-Agent System</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <div id="status-indicator" class="flex items-center gap-2 px-3 py-1.5 rounded-full glass text-sm">
+              <span class="status-dot w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+              <span class="text-slate-300">5 Agents Ready</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+      <!-- Agent Team Panel -->
+      <div id="team-panel" class="mb-6">
+        <h2 class="text-sm font-medium text-slate-400 mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          AI Team
+        </h2>
+        <div class="flex gap-3 overflow-x-auto pb-2" id="agent-cards">
+          <!-- Agent cards will be inserted here -->
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-6 h-full">
+        <!-- Left Panel - Chat Interface -->
+        <div class="flex flex-col glass rounded-2xl overflow-hidden">
+          <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+            <h2 class="text-lg font-semibold flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              Team Chat
+            </h2>
+            <span class="text-xs text-slate-400" id="message-count">0 messages</span>
+          </div>
+          
+          <!-- Messages Container -->
+          <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4" style="max-height: 450px;">
+            <!-- Welcome Message -->
+            <div class="flex gap-3 animate-slide-in">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0 flex items-center justify-center text-lg">🚀</div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="font-medium text-blue-400">System</span>
+                  <span class="text-xs text-slate-500">Just now</span>
+                </div>
+                <div class="glass-dark rounded-xl rounded-tl-none px-4 py-3">
+                  <p class="text-slate-200">Welcome to <span class="font-semibold text-blue-400">Agent Battalion</span>!</p>
+                  <p class="text-slate-300 mt-2">Our team of 5 AI agents is ready to build your application:</p>
+                  <ul class="mt-2 space-y-1 text-sm text-slate-400">
+                    <li>👔 <strong>Alex</strong> - Product Manager</li>
+                    <li>🏗️ <strong>Sam</strong> - Architect</li>
+                    <li>🎨 <strong>Maya</strong> - Designer</li>
+                    <li>💻 <strong>Jordan</strong> - Frontend Engineer</li>
+                    <li>🔍 <strong>Riley</strong> - QA Engineer</li>
+                  </ul>
+                  <p class="text-slate-400 text-sm mt-3">Describe your app and watch us collaborate!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Area -->
+          <div class="p-4 border-t border-white/10">
+            <form id="chat-form" class="flex gap-3">
+              <div class="flex-1 relative">
+                <input 
+                  type="text" 
+                  id="prompt-input"
+                  placeholder="Describe the app you want to build..."
+                  class="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none text-white placeholder-slate-400 transition-all"
+                />
+              </div>
+              <button 
+                type="submit"
+                id="generate-btn"
+                class="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 font-semibold transition-all transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <span>Build</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right Panel - Output -->
+        <div class="flex flex-col glass rounded-2xl overflow-hidden">
+          <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+            <h2 class="text-lg font-semibold flex items-center gap-2">
+              <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+              </svg>
+              Project Output
+            </h2>
+            <div class="flex items-center gap-2">
+              <span id="file-count" class="text-xs text-slate-400">0 files</span>
+              <button id="download-btn" class="hidden px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 text-sm font-medium transition-all flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Download
+              </button>
+            </div>
+          </div>
+
+          <!-- Progress Section -->
+          <div id="progress-section" class="hidden px-6 py-4 border-b border-white/10 bg-slate-900/30">
+            <div class="flex items-center gap-4 mb-3">
+              <div id="current-agent-avatar" class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl animate-pulse-slow">🚀</div>
+              <div class="flex-1">
+                <p id="progress-agent" class="font-semibold text-blue-400">Initializing...</p>
+                <p id="progress-message" class="text-sm text-slate-400">Preparing agents</p>
+              </div>
+              <span id="progress-percent" class="text-2xl font-bold text-blue-400">0%</span>
+            </div>
+            <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- QA Report Section -->
+          <div id="qa-section" class="hidden px-6 py-4 border-b border-white/10 bg-slate-900/30">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-slate-300">Quality Score</span>
+              <span id="qa-score" class="text-lg font-bold text-green-400">--</span>
+            </div>
+            <div class="grid grid-cols-3 gap-4 text-center text-xs">
+              <div>
+                <div id="qa-requirements" class="text-lg font-semibold text-blue-400">--%</div>
+                <div class="text-slate-500">Requirements</div>
+              </div>
+              <div>
+                <div id="qa-components" class="text-lg font-semibold text-purple-400">--%</div>
+                <div class="text-slate-500">Components</div>
+              </div>
+              <div>
+                <div id="qa-accessibility" class="text-lg font-semibold text-pink-400">--%</div>
+                <div class="text-slate-500">Accessibility</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Files Container -->
+          <div id="files-container" class="flex-1 overflow-y-auto p-6" style="max-height: 350px;">
+            <div id="empty-state" class="h-full flex flex-col items-center justify-center text-center py-12">
+              <div class="w-20 h-20 rounded-2xl bg-slate-800/50 flex items-center justify-center mb-4">
+                <svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold text-slate-300 mb-2">Ready to Build</h3>
+              <p class="text-slate-500 text-sm max-w-xs">Describe your app and our AI team will collaborate to build it</p>
+            </div>
+            <div id="files-tree" class="hidden space-y-1"></div>
+          </div>
+
+          <!-- File Preview -->
+          <div id="file-preview" class="hidden border-t border-white/10">
+            <div class="px-4 py-2 bg-slate-800/50 flex items-center justify-between">
+              <span id="preview-filename" class="text-sm text-slate-300 font-mono"></span>
+              <button id="close-preview" class="p-1 hover:bg-slate-700 rounded transition-colors">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <pre id="preview-content" class="code-block p-4 text-sm text-slate-300 overflow-auto max-h-48 bg-slate-900/50"></pre>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass-dark mt-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <p class="text-center text-slate-500 text-sm">
+          Agent Battalion v2.0 • MGX-Style Multi-Agent System • Next.js 15 + React 19
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Initialize Socket.IO
+    const socket = io();
+    
+    // DOM Elements
+    const messagesContainer = document.getElementById('messages-container');
+    const chatForm = document.getElementById('chat-form');
+    const promptInput = document.getElementById('prompt-input');
+    const generateBtn = document.getElementById('generate-btn');
+    const progressSection = document.getElementById('progress-section');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+    const progressAgent = document.getElementById('progress-agent');
+    const progressMessage = document.getElementById('progress-message');
+    const currentAgentAvatar = document.getElementById('current-agent-avatar');
+    const filesContainer = document.getElementById('files-container');
+    const emptyState = document.getElementById('empty-state');
+    const filesTree = document.getElementById('files-tree');
+    const downloadBtn = document.getElementById('download-btn');
+    const filePreview = document.getElementById('file-preview');
+    const previewFilename = document.getElementById('preview-filename');
+    const previewContent = document.getElementById('preview-content');
+    const closePreview = document.getElementById('close-preview');
+    const qaSection = document.getElementById('qa-section');
+    const agentCards = document.getElementById('agent-cards');
+    const messageCount = document.getElementById('message-count');
+    const fileCount = document.getElementById('file-count');
+    
+    // State
+    let generatedFiles = [];
+    let currentDownloadUrl = null;
+    let currentProjectId = null;
+    let messages = 1;
+    
+    // Agent info
+    const agents = [
+      { id: 'pm-agent', name: 'Alex', role: 'Product Manager', avatar: '👔', color: 'blue' },
+      { id: 'architect-agent', name: 'Sam', role: 'Architect', avatar: '🏗️', color: 'indigo' },
+      { id: 'designer-agent', name: 'Maya', role: 'Designer', avatar: '🎨', color: 'pink' },
+      { id: 'frontend-engineer-agent', name: 'Jordan', role: 'Engineer', avatar: '💻', color: 'green' },
+      { id: 'qa-engineer-agent', name: 'Riley', role: 'QA', avatar: '🔍', color: 'yellow' },
+    ];
+    
+    // Initialize agent cards
+    function initAgentCards() {
+      agentCards.innerHTML = agents.map(agent => `
+        <div id="card-${agent.id}" class="agent-card flex-shrink-0 w-32 p-3 rounded-xl glass border border-transparent transition-all duration-300">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-2xl">${agent.avatar}</span>
+            <span class="status-dot w-2 h-2 rounded-full bg-slate-500"></span>
+          </div>
+          <div class="text-sm font-medium text-white">${agent.name}</div>
+          <div class="text-xs text-slate-400">${agent.role}</div>
+        </div>
+      `).join('');
+    }
+    
+    // Update agent card status
+    function updateAgentCard(agentRole, isActive) {
+      // Reset all cards
+      document.querySelectorAll('.agent-card').forEach(card => {
+        card.classList.remove('active');
+        card.querySelector('.status-dot').classList.remove('bg-green-400');
+        card.querySelector('.status-dot').classList.add('bg-slate-500');
+      });
+      
+      // Find and activate the current agent's card
+      const roleMap = {
+        'product_manager': 'pm-agent',
+        'architect': 'architect-agent',
+        'designer': 'designer-agent',
+        'frontend_engineer': 'frontend-engineer-agent',
+        'qa_engineer': 'qa-engineer-agent',
+      };
+      
+      const agentId = roleMap[agentRole];
+      if (agentId && isActive) {
+        const card = document.getElementById(`card-${agentId}`);
+        if (card) {
+          card.classList.add('active');
+          card.querySelector('.status-dot').classList.remove('bg-slate-500');
+          card.querySelector('.status-dot').classList.add('bg-green-400');
+        }
+      }
+    }
+    
+    // Add message to chat
+    function addMessage(avatar, name, content, type = 'agent') {
+      messages++;
+      messageCount.textContent = `${messages} messages`;
+      
+      const colorMap = {
+        'Alex': 'blue', 'Sam': 'indigo', 'Maya': 'pink',
+        'Jordan': 'green', 'Riley': 'yellow', 'System': 'purple', 'You': 'emerald'
+      };
+      const color = colorMap[name] || 'blue';
+      
+      const isUser = type === 'user';
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `flex gap-3 animate-slide-in ${isUser ? 'flex-row-reverse' : ''}`;
+      
+      messageDiv.innerHTML = `
+        <div class="w-10 h-10 rounded-xl ${isUser ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : `bg-gradient-to-br from-${color}-500 to-${color}-600`} flex-shrink-0 flex items-center justify-center text-lg">
+          ${avatar}
+        </div>
+        <div class="flex-1 ${isUser ? 'text-right' : ''}">
+          <div class="flex items-center gap-2 mb-1 ${isUser ? 'justify-end' : ''}">
+            <span class="font-medium text-${color}-400">${name}</span>
+            <span class="text-xs text-slate-500">${new Date().toLocaleTimeString()}</span>
+          </div>
+          <div class="${isUser ? 'bg-blue-600/30 rounded-tr-none ml-auto' : 'glass-dark rounded-tl-none'} rounded-xl px-4 py-3 max-w-md ${isUser ? 'inline-block' : ''}">
+            <p class="text-slate-200">${content}</p>
+          </div>
+        </div>
+      `;
+      
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // Update progress
+    function updateProgress(data) {
+      progressSection.classList.remove('hidden');
+      progressBar.style.width = `${data.progress}%`;
+      progressPercent.textContent = `${data.progress}%`;
+      progressAgent.textContent = data.agent.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+      progressMessage.textContent = data.message;
+      currentAgentAvatar.textContent = data.agentAvatar;
+      
+      updateAgentCard(data.agent, true);
+    }
+    
+    // Get file icon
+    function getFileIcon(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      const icons = { ts: '🟦', tsx: '⚛️', js: '🟨', jsx: '⚛️', json: '📋', css: '🎨', html: '🌐', md: '📝', mjs: '🟨' };
+      return icons[ext] || '📄';
+    }
+    
+    // Render file tree
+    function renderFileTree(files) {
+      emptyState.classList.add('hidden');
+      filesTree.classList.remove('hidden');
+      filesTree.innerHTML = '';
+      fileCount.textContent = `${files.length} files`;
+      
+      const tree = {};
+      files.forEach((file, index) => {
+        const parts = file.path.split('/');
+        let current = tree;
+        parts.forEach((part, i) => {
+          if (i === parts.length - 1) {
+            if (!current._files) current._files = [];
+            current._files.push({ name: part, fullPath: file.path, index, size: file.size });
+          } else {
+            if (!current[part]) current[part] = {};
+            current = current[part];
+          }
+        });
+      });
+      
+      function renderNode(node, container, depth = 0) {
+        Object.keys(node).filter(k => k !== '_files').sort().forEach(dirName => {
+          const dirDiv = document.createElement('div');
+          dirDiv.className = 'space-y-1';
+          dirDiv.innerHTML = `
+            <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer" style="padding-left: ${depth * 16 + 8}px">
+              <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+              </svg>
+              <span class="text-slate-300 text-sm">${dirName}/</span>
+            </div>
+          `;
+          container.appendChild(dirDiv);
+          
+          const childContainer = document.createElement('div');
+          childContainer.className = 'space-y-1';
+          dirDiv.appendChild(childContainer);
+          
+          renderNode(node[dirName], childContainer, depth + 1);
+        });
+        
+        if (node._files) {
+          node._files.sort((a, b) => a.name.localeCompare(b.name)).forEach(file => {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group';
+            fileDiv.style.paddingLeft = `${depth * 16 + 8}px`;
+            fileDiv.innerHTML = `
+              <span>${getFileIcon(file.name)}</span>
+              <span class="text-slate-300 text-sm flex-1">${file.name}</span>
+              <span class="text-slate-500 text-xs opacity-0 group-hover:opacity-100 transition-opacity">${(file.size / 1024).toFixed(1)}KB</span>
+            `;
+            fileDiv.onclick = () => {
+              if (currentProjectId) {
+                socket.emit('file:content', { projectId: currentProjectId, path: file.fullPath });
+              }
+            };
+            container.appendChild(fileDiv);
+          });
+        }
+      }
+      
+      renderNode(tree, filesTree);
+    }
+    
+    // Show file preview
+    function showFilePreview(filename, content) {
+      previewFilename.textContent = filename;
+      previewContent.textContent = content;
+      filePreview.classList.remove('hidden');
+    }
+    
+    closePreview.onclick = () => filePreview.classList.add('hidden');
+    
+    // Form submission
+    chatForm.onsubmit = async (e) => {
+      e.preventDefault();
+      
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
+      
+      addMessage('👤', 'You', prompt, 'user');
+      promptInput.value = '';
+      promptInput.disabled = true;
+      generateBtn.disabled = true;
+      
+      filesTree.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+      downloadBtn.classList.add('hidden');
+      filePreview.classList.add('hidden');
+      qaSection.classList.add('hidden');
+      generatedFiles = [];
+      
+      socket.emit('generate:start', { prompt, projectName: prompt.split(' ').slice(0, 3).join('-') });
+    };
+    
+    // Socket events
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      initAgentCards();
+    });
+    
+    socket.on('generation:progress', (data) => {
+      updateProgress(data);
+      
+      if (data.progress > 0 && data.progress < 100 && data.agent !== 'system') {
+        // Add agent message for significant progress
+        const agent = agents.find(a => a.id.startsWith(data.agent.replace('_', '-')));
+        if (agent && data.message && !data.message.includes('...')) {
+          addMessage(data.agentAvatar, agent?.name || 'Agent', data.message);
+        }
+      }
+    });
+    
+    socket.on('generation:complete', (data) => {
+      currentProjectId = data.projectId;
+      currentDownloadUrl = data.downloadUrl;
+      generatedFiles = data.files;
+      
+      progressSection.classList.add('hidden');
+      updateAgentCard(null, false);
+      
+      renderFileTree(data.files);
+      downloadBtn.classList.remove('hidden');
+      
+      // Show QA report
+      if (data.qaReport) {
+        qaSection.classList.remove('hidden');
+        document.getElementById('qa-score').textContent = `${data.qaReport.score}/100`;
+        document.getElementById('qa-requirements').textContent = `${data.qaReport.coverage.requirements}%`;
+        document.getElementById('qa-components').textContent = `${data.qaReport.coverage.components}%`;
+        document.getElementById('qa-accessibility').textContent = `${data.qaReport.coverage.accessibility}%`;
+      }
+      
+      addMessage('✅', 'System', `Project complete! Generated ${data.files.length} files in ${(data.duration / 1000).toFixed(1)}s. QA Score: ${data.qaReport?.score || 'N/A'}/100`);
+      
+      promptInput.disabled = false;
+      generateBtn.disabled = false;
+    });
+    
+    socket.on('generation:error', (data) => {
+      addMessage('❌', 'System', `Error: ${data.message}`);
+      progressSection.classList.add('hidden');
+      updateAgentCard(null, false);
+      promptInput.disabled = false;
+      generateBtn.disabled = false;
+    });
+    
+    socket.on('file:content', (data) => {
+      showFilePreview(data.path, data.content);
+    });
+    
+    downloadBtn.onclick = () => {
+      if (currentDownloadUrl) {
+        window.location.href = currentDownloadUrl;
+      }
+    };
+    
+    promptInput.focus();
+  </script>
+</body>
+</html>

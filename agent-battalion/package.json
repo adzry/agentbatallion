@@ -1,0 +1,18 @@
+{
+  "name": "agent-battalion-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/agent-battalion",
+    "packages/agent-battalion-mcp"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@meta/agent-battalion",
+    "build": "npm run build --workspaces",
+    "start": "npm run start --workspace=@meta/agent-battalion",
+    "mcp:dev": "npm run dev --workspace=@meta/agent-battalion-mcp"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
