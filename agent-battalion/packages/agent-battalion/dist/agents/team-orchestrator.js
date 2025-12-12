@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Team Orchestrator
  *
@@ -8,20 +7,18 @@
  * - Handles handoffs between agents
  * - Provides real-time progress updates
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.TeamOrchestrator = void 0;
-exports.createTeamOrchestrator = createTeamOrchestrator;
-const events_1 = require("events");
-const uuid_1 = require("uuid");
-const product_manager_js_1 = require("./team/product-manager.js");
-const architect_js_1 = require("./team/architect.js");
-const designer_js_1 = require("./team/designer.js");
-const frontend_engineer_js_1 = require("./team/frontend-engineer.js");
-const qa_engineer_js_1 = require("./team/qa-engineer.js");
-const memory_manager_js_1 = require("../memory/memory-manager.js");
-const tool_registry_js_1 = require("../tools/tool-registry.js");
-const message_bus_js_1 = require("../communication/message-bus.js");
-class TeamOrchestrator extends events_1.EventEmitter {
+import { EventEmitter } from 'events';
+import { v4 as uuidv4 } from 'uuid';
+import { ProductManagerAgent } from './team/product-manager.js';
+import { ArchitectAgent } from './team/architect.js';
+import { DesignerAgent } from './team/designer.js';
+import { FrontendEngineerAgent } from './team/frontend-engineer.js';
+import { QAEngineerAgent } from './team/qa-engineer.js';
+import { createMemoryManager } from '../memory/memory-manager.js';
+import { createToolRegistry } from '../tools/tool-registry.js';
+import { createMessageBus } from '../communication/message-bus.js';
+import { cleanupCode } from '../utils/code-cleanup.js';
+export class TeamOrchestrator extends EventEmitter {
     config;
     memory;
     tools;
@@ -32,7 +29,7 @@ class TeamOrchestrator extends events_1.EventEmitter {
     constructor(config) {
         super();
         this.config = {
-            projectId: config?.projectId || (0, uuid_1.v4)(),
+            projectId: config?.projectId || uuidv4(),
             projectName: config?.projectName || 'New Project',
             teamSize: config?.teamSize || 'medium',
             enabledRoles: config?.enabledRoles || [
@@ -47,9 +44,9 @@ class TeamOrchestrator extends events_1.EventEmitter {
             qualityThreshold: config?.qualityThreshold || 80,
         };
         // Initialize infrastructure
-        this.memory = (0, memory_manager_js_1.createMemoryManager)();
-        this.tools = (0, tool_registry_js_1.createToolRegistry)();
-        this.messageBus = (0, message_bus_js_1.createMessageBus)({ enableLogging: true });
+        this.memory = createMemoryManager();
+        this.tools = createToolRegistry();
+        this.messageBus = createMessageBus({ enableLogging: true });
         // Initialize agents
         this.initializeAgents();
         // Listen to agent events
@@ -61,19 +58,19 @@ class TeamOrchestrator extends events_1.EventEmitter {
     initializeAgents() {
         const { enabledRoles } = this.config;
         if (enabledRoles.includes('product_manager')) {
-            this.agents.set('product_manager', new product_manager_js_1.ProductManagerAgent(this.memory, this.tools, this.messageBus));
+            this.agents.set('product_manager', new ProductManagerAgent(this.memory, this.tools, this.messageBus));
         }
         if (enabledRoles.includes('architect')) {
-            this.agents.set('architect', new architect_js_1.ArchitectAgent(this.memory, this.tools, this.messageBus));
+            this.agents.set('architect', new ArchitectAgent(this.memory, this.tools, this.messageBus));
         }
         if (enabledRoles.includes('designer')) {
-            this.agents.set('designer', new designer_js_1.DesignerAgent(this.memory, this.tools, this.messageBus));
+            this.agents.set('designer', new DesignerAgent(this.memory, this.tools, this.messageBus));
         }
         if (enabledRoles.includes('frontend_engineer')) {
-            this.agents.set('frontend_engineer', new frontend_engineer_js_1.FrontendEngineerAgent(this.memory, this.tools, this.messageBus));
+            this.agents.set('frontend_engineer', new FrontendEngineerAgent(this.memory, this.tools, this.messageBus));
         }
         if (enabledRoles.includes('qa_engineer')) {
-            this.agents.set('qa_engineer', new qa_engineer_js_1.QAEngineerAgent(this.memory, this.tools, this.messageBus));
+            this.agents.set('qa_engineer', new QAEngineerAgent(this.memory, this.tools, this.messageBus));
         }
     }
     /**
@@ -141,7 +138,12 @@ class TeamOrchestrator extends events_1.EventEmitter {
             const frontendAgent = this.agents.get('frontend_engineer');
             let files = await frontendAgent.generateCode(architecture, designSystem, techStack, fileStructure);
             await this.memory.store('files', 'current', files);
-            this.emitProgress('development', 'frontend_engineer', '💻', `Generated ${files.length} files`, 75);
+            this.emitProgress('development', 'frontend_engineer', '💻', `Generated ${files.length} files`, 70);
+            // Phase 4.5: Post-process and cleanup generated code
+            this.emitProgress('cleanup', 'frontend_engineer', '🧹', 'Cleaning up generated code...', 73);
+            files = this.cleanupGeneratedFiles(files);
+            await this.memory.store('files', 'current', files);
+            this.emitProgress('development', 'frontend_engineer', '💻', `Code cleanup complete`, 75);
             // Phase 5: QA Engineer - Review & Test
             let qaReport;
             let passed = false;
@@ -239,12 +241,39 @@ class TeamOrchestrator extends events_1.EventEmitter {
             agent.reset();
         }
     }
+    /**
+     * Cleanup and post-process generated files
+     */
+    cleanupGeneratedFiles(files) {
+        return files.map(file => {
+            // Only cleanup code files
+            if (!file.path.match(/\.(tsx?|jsx?|css|json)$/)) {
+                return file;
+            }
+            const result = cleanupCode(file.content, file.path);
+            // Log fixes for debugging
+            if (result.fixes.length > 0) {
+                this.events.push({
+                    id: uuidv4(),
+                    type: 'agent_thinking',
+                    agentId: 'system',
+                    timestamp: new Date(),
+                    data: {
+                        message: `Cleaned ${file.path}: ${result.fixes.join(', ')}`,
+                    },
+                });
+            }
+            return {
+                ...file,
+                content: result.code,
+            };
+        });
+    }
 }
-exports.TeamOrchestrator = TeamOrchestrator;
 /**
  * Create an orchestrator instance
  */
-function createTeamOrchestrator(config) {
+export function createTeamOrchestrator(config) {
     return new TeamOrchestrator(config);
 }
 //# sourceMappingURL=team-orchestrator.js.map

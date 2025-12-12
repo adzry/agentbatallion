@@ -1,43 +1,34 @@
-"use strict";
 /**
  * Agent Battalion Web Server
  *
  * MGX-style multi-agent app generation with real-time collaboration
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.io = exports.server = exports.app = void 0;
-const express_1 = __importDefault(require("express"));
-const http_1 = require("http");
-const socket_io_1 = require("socket.io");
-const cors_1 = __importDefault(require("cors"));
-const path_1 = __importDefault(require("path"));
-const uuid_1 = require("uuid");
-const archiver_1 = __importDefault(require("archiver"));
-require("dotenv/config");
-const index_js_1 = require("../agents/index.js");
+import express from 'express';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
+import cors from 'cors';
+import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import archiver from 'archiver';
+import 'dotenv/config';
+import { createTeamOrchestrator, } from '../agents/index.js';
 // Store for generated projects
 const projectStore = new Map();
 // Active orchestrators
 const activeOrchestrators = new Map();
 // Create Express app
-const app = (0, express_1.default)();
-exports.app = app;
-const server = (0, http_1.createServer)(app);
-exports.server = server;
-const io = new socket_io_1.Server(server, {
+const app = express();
+const server = createServer(app);
+const io = new SocketIOServer(server, {
     cors: {
         origin: '*',
         methods: ['GET', 'POST'],
     },
 });
-exports.io = io;
 // Middleware
-app.use((0, cors_1.default)());
-app.use(express_1.default.json());
-app.use(express_1.default.static(path_1.default.join(__dirname, '../../public')));
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '../../public')));
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({
@@ -68,7 +59,7 @@ app.get('/api/download/:projectId', (req, res) => {
     }
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${projectId}.zip"`);
-    const archive = (0, archiver_1.default)('zip', { zlib: { level: 9 } });
+    const archive = archiver('zip', { zlib: { level: 9 } });
     archive.pipe(res);
     for (const file of project.files) {
         archive.append(file.content, { name: file.path });
@@ -111,14 +102,14 @@ io.on('connection', (socket) => {
     // Start generation
     socket.on('generate:start', async (data) => {
         const { prompt, projectName, options } = data;
-        const projectId = (0, uuid_1.v4)();
+        const projectId = uuidv4();
         console.log(`\n${'='.repeat(60)}`);
         console.log(`Starting generation for project: ${projectId}`);
         console.log(`Prompt: ${prompt}`);
         console.log(`${'='.repeat(60)}\n`);
         try {
             // Create orchestrator
-            const orchestrator = (0, index_js_1.createTeamOrchestrator)({
+            const orchestrator = createTeamOrchestrator({
                 projectId,
                 projectName: projectName || 'My App',
                 teamSize: options?.teamSize || 'medium',
@@ -211,24 +202,36 @@ io.on('connection', (socket) => {
         console.log(`Client disconnected: ${socket.id}`);
     });
 });
-// Start server
-const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-    console.log(`
+// Start server function
+export function startServer(port) {
+    const PORT = port || parseInt(process.env.PORT || '4000');
+    return new Promise((resolve) => {
+        server.listen(PORT, () => {
+            console.log(`
   ╔═══════════════════════════════════════════════════════════════╗
   ║                                                               ║
-  ║   🚀 Agent Battalion v2.0 - MGX-Style Multi-Agent System     ║
+  ║   🚀 Agent Battalion v3.0 - MGX-Style Multi-Agent System     ║
   ║                                                               ║
   ║   Web UI:    http://localhost:${PORT}                           ║
   ║   API:       http://localhost:${PORT}/api                       ║
   ║                                                               ║
   ║   Features:                                                   ║
-  ║   • 5 Specialized AI Agents                                   ║
+  ║   • 8 Specialized AI Agents                                   ║
   ║   • Real-time Collaboration                                   ║
+  ║   • Multi-Provider LLM (Claude, GPT-4, Gemini)               ║
   ║   • Quality Assurance                                         ║
   ║   • Design System Generation                                  ║
   ║                                                               ║
   ╚═══════════════════════════════════════════════════════════════╝
-  `);
-});
+      `);
+            resolve();
+        });
+    });
+}
+// Auto-start if run directly (not imported)
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+if (isMainModule) {
+    startServer();
+}
+export { app, server, io };
 //# sourceMappingURL=server.js.map

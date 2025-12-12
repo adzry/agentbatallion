@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Human Feedback Loop
  *
@@ -9,16 +8,12 @@
  * - Code reviews
  * - Priority decisions
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.HumanFeedbackManager = void 0;
-exports.requiresApproval = requiresApproval;
-exports.createFeedbackManager = createFeedbackManager;
-const events_1 = require("events");
-const uuid_1 = require("uuid");
+import { EventEmitter } from 'events';
+import { v4 as uuidv4 } from 'uuid';
 /**
  * Human Feedback Manager
  */
-class HumanFeedbackManager extends events_1.EventEmitter {
+export class HumanFeedbackManager extends EventEmitter {
     config;
     pendingRequests = new Map();
     responseHandlers = new Map();
@@ -156,7 +151,7 @@ class HumanFeedbackManager extends events_1.EventEmitter {
         const timeout = options?.timeout || this.config.defaultTimeout;
         const now = new Date();
         const request = {
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             type,
             title,
             description,
@@ -230,11 +225,10 @@ class HumanFeedbackManager extends events_1.EventEmitter {
         }
     }
 }
-exports.HumanFeedbackManager = HumanFeedbackManager;
 /**
  * Feedback decorator for agent methods
  */
-function requiresApproval(title) {
+export function requiresApproval(title) {
     return function (target, propertyKey, descriptor) {
         const originalMethod = descriptor.value;
         descriptor.value = async function (...args) {
@@ -258,7 +252,7 @@ function requiresApproval(title) {
 /**
  * Create feedback manager instance
  */
-function createFeedbackManager(config) {
+export function createFeedbackManager(config) {
     return new HumanFeedbackManager(config);
 }
 //# sourceMappingURL=human-feedback.js.map

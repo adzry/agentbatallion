@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Security Agent
  *
@@ -9,11 +8,9 @@
  * - Dependency auditing
  * - Security best practices enforcement
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SecurityAgent = void 0;
-const uuid_1 = require("uuid");
-const base_team_agent_js_1 = require("../base-team-agent.js");
-class SecurityAgent extends base_team_agent_js_1.BaseTeamAgent {
+import { v4 as uuidv4 } from 'uuid';
+import { BaseTeamAgent } from '../base-team-agent.js';
+export class SecurityAgent extends BaseTeamAgent {
     constructor(memory, tools, messageBus) {
         const profile = {
             id: 'security-agent',
@@ -108,7 +105,7 @@ Focus on:
         // SQL Injection checks
         if (content.includes('raw(') || content.includes('$queryRaw')) {
             issues.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: 'high',
                 category: 'injection',
                 title: 'Potential SQL Injection',
@@ -121,7 +118,7 @@ Focus on:
         // XSS checks
         if (content.includes('dangerouslySetInnerHTML')) {
             issues.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: 'high',
                 category: 'xss',
                 title: 'Potential XSS Vulnerability',
@@ -141,7 +138,7 @@ Focus on:
         for (const pattern of secretPatterns) {
             if (pattern.test(content) && !file.path.includes('.env')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'critical',
                     category: 'sensitive_data',
                     title: 'Hardcoded Secret Detected',
@@ -156,7 +153,7 @@ Focus on:
         // Insecure crypto
         if (content.includes('md5') || content.includes('sha1')) {
             issues.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: 'medium',
                 category: 'cryptography',
                 title: 'Weak Cryptographic Algorithm',
@@ -172,7 +169,7 @@ Focus on:
                 !file.path.includes('test') &&
                 !file.path.includes('dev')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'low',
                     category: 'logging',
                     title: 'Console Log Statement',
@@ -187,7 +184,7 @@ Focus on:
         // Eval usage
         if (content.includes('eval(') || content.includes('new Function(')) {
             issues.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: 'critical',
                 category: 'injection',
                 title: 'Dangerous eval() Usage',
@@ -201,7 +198,7 @@ Focus on:
         const regexPattern = /new RegExp\([^)]*\+/;
         if (regexPattern.test(content)) {
             issues.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: 'medium',
                 category: 'injection',
                 title: 'Potential ReDoS',
@@ -214,7 +211,7 @@ Focus on:
         // CORS wildcard
         if (content.includes("origin: '*'") || content.includes('origin: "*"')) {
             issues.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: 'medium',
                 category: 'misconfiguration',
                 title: 'CORS Wildcard',
@@ -228,7 +225,7 @@ Focus on:
         if (file.path.includes('api/') && file.path.endsWith('route.ts')) {
             if (!content.includes('z.') && !content.includes('zod') && !content.includes('validate')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'medium',
                     category: 'injection',
                     title: 'Missing Input Validation',
@@ -248,7 +245,7 @@ Focus on:
         // Check for CSRF protection
         if (!allContent.includes('csrf') && !allContent.includes('CSRF')) {
             issues.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: 'medium',
                 category: 'csrf',
                 title: 'No CSRF Protection Detected',
@@ -260,7 +257,7 @@ Focus on:
         // Check for rate limiting
         if (!allContent.includes('rateLimit') && !allContent.includes('rate-limit')) {
             issues.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: 'medium',
                 category: 'misconfiguration',
                 title: 'No Rate Limiting',
@@ -272,7 +269,7 @@ Focus on:
         // Check for security headers
         if (!allContent.includes('Content-Security-Policy') && !allContent.includes('helmet')) {
             issues.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: 'low',
                 category: 'misconfiguration',
                 title: 'Missing Security Headers',
@@ -283,7 +280,7 @@ Focus on:
         // Check for .env.example
         if (!filePaths.some(p => p.includes('.env.example') || p.includes('.env.local'))) {
             issues.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: 'info',
                 category: 'misconfiguration',
                 title: 'No Environment Template',
@@ -310,7 +307,7 @@ Focus on:
             for (const [pkg, info] of Object.entries(vulnerablePackages)) {
                 if (deps[pkg]) {
                     issues.push({
-                        id: (0, uuid_1.v4)(),
+                        id: uuidv4(),
                         severity: info.severity,
                         category: 'dependency',
                         title: `Potentially Vulnerable: ${pkg}`,
@@ -443,5 +440,4 @@ ${report.recommendations.map(r => `- ${r}`).join('\n')}
 `;
     }
 }
-exports.SecurityAgent = SecurityAgent;
 //# sourceMappingURL=security-agent.js.map

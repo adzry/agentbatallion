@@ -1,15 +1,11 @@
-"use strict";
 /**
  * Analyzer Agent
  *
  * Responsible for analyzing user requirements and extracting structured
  * specifications for the app to be generated.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AnalyzerAgent = void 0;
-exports.runAnalyzerAgent = runAnalyzerAgent;
-const base_agent_js_1 = require("../base-agent.js");
-class AnalyzerAgent extends base_agent_js_1.BaseAgent {
+import { BaseAgent } from '../base-agent.js';
+export class AnalyzerAgent extends BaseAgent {
     constructor() {
         super('analyzer', 'Analyzes user requirements and extracts specifications');
     }
@@ -228,11 +224,10 @@ Focus on modern web development best practices:
         return features;
     }
 }
-exports.AnalyzerAgent = AnalyzerAgent;
 /**
  * Run the analyzer agent
  */
-async function runAnalyzerAgent(prompt, config) {
+export async function runAnalyzerAgent(prompt, config) {
     const agent = new AnalyzerAgent();
     const result = await agent.run({ prompt, config });
     return result;

@@ -1,22 +1,17 @@
-"use strict";
 /**
  * Orchestrator
  *
  * High-level API for the Agent Battalion system.
  * Provides a simple interface for generating applications.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Orchestrator = void 0;
-exports.createOrchestrator = createOrchestrator;
-exports.quickGenerate = quickGenerate;
-const uuid_1 = require("uuid");
-const analyzer_agent_js_1 = require("../langgraph/agents/analyzer-agent.js");
-const planner_agent_js_1 = require("../langgraph/agents/planner-agent.js");
-const coordinator_agent_js_1 = require("../langgraph/agents/coordinator-agent.js");
+import { v4 as uuidv4 } from 'uuid';
+import { runAnalyzerAgent } from '../langgraph/agents/analyzer-agent.js';
+import { runPlannerAgent } from '../langgraph/agents/planner-agent.js';
+import { runCoordinatorAgent } from '../langgraph/agents/coordinator-agent.js';
 /**
  * Main Orchestrator class
  */
-class Orchestrator {
+export class Orchestrator {
     useTemporalWorkflows;
     constructor(options = {}) {
         this.useTemporalWorkflows = options.useTemporalWorkflows || false;
@@ -25,7 +20,7 @@ class Orchestrator {
      * Generate an application from a prompt
      */
     async generate(prompt, options = {}) {
-        const missionId = (0, uuid_1.v4)();
+        const missionId = uuidv4();
         const startTime = Date.now();
         const { onProgress } = options;
         try {
@@ -40,13 +35,13 @@ class Orchestrator {
             const projectName = options.projectName || this.extractProjectName(prompt);
             // Phase 1: Analyze
             onProgress?.({ phase: 'analyzing', message: 'Analyzing requirements...', progress: 10 });
-            const analysis = await (0, analyzer_agent_js_1.runAnalyzerAgent)(prompt, config);
+            const analysis = await runAnalyzerAgent(prompt, config);
             // Phase 2: Plan
             onProgress?.({ phase: 'planning', message: 'Planning architecture...', progress: 30 });
-            const plan = await (0, planner_agent_js_1.runPlannerAgent)(analysis, config);
+            const plan = await runPlannerAgent(analysis, config);
             // Phase 3: Generate
             onProgress?.({ phase: 'generating', message: 'Generating code...', progress: 50 });
-            const files = await (0, coordinator_agent_js_1.runCoordinatorAgent)(plan, projectName);
+            const files = await runCoordinatorAgent(plan, projectName);
             // Complete
             onProgress?.({ phase: 'complete', message: 'Generation complete!', progress: 100 });
             return {
@@ -97,17 +92,16 @@ class Orchestrator {
         return 'My App';
     }
 }
-exports.Orchestrator = Orchestrator;
 /**
  * Create a new orchestrator instance
  */
-function createOrchestrator(options) {
+export function createOrchestrator(options) {
     return new Orchestrator(options);
 }
 /**
  * Quick generate function for simple use cases
  */
-async function quickGenerate(prompt, options) {
+export async function quickGenerate(prompt, options) {
     const orchestrator = new Orchestrator();
     return orchestrator.generate(prompt, options);
 }

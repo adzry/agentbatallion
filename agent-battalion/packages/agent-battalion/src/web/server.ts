@@ -263,26 +263,38 @@ io.on('connection', (socket: Socket) => {
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 4000;
-
-server.listen(PORT, () => {
-  console.log(`
+// Start server function
+export function startServer(port?: number): Promise<void> {
+  const PORT = port || parseInt(process.env.PORT || '4000');
+  
+  return new Promise((resolve) => {
+    server.listen(PORT, () => {
+      console.log(`
   ╔═══════════════════════════════════════════════════════════════╗
   ║                                                               ║
-  ║   🚀 Agent Battalion v2.0 - MGX-Style Multi-Agent System     ║
+  ║   🚀 Agent Battalion v3.0 - MGX-Style Multi-Agent System     ║
   ║                                                               ║
   ║   Web UI:    http://localhost:${PORT}                           ║
   ║   API:       http://localhost:${PORT}/api                       ║
   ║                                                               ║
   ║   Features:                                                   ║
-  ║   • 5 Specialized AI Agents                                   ║
+  ║   • 8 Specialized AI Agents                                   ║
   ║   • Real-time Collaboration                                   ║
+  ║   • Multi-Provider LLM (Claude, GPT-4, Gemini)               ║
   ║   • Quality Assurance                                         ║
   ║   • Design System Generation                                  ║
   ║                                                               ║
   ╚═══════════════════════════════════════════════════════════════╝
-  `);
-});
+      `);
+      resolve();
+    });
+  });
+}
+
+// Auto-start if run directly (not imported)
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+if (isMainModule) {
+  startServer();
+}
 
 export { app, server, io };

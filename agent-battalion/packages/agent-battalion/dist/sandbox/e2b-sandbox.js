@@ -1,4 +1,3 @@
-"use strict";
 /**
  * E2B Sandbox Integration
  *
@@ -8,14 +7,11 @@
  * - Testing applications
  * - File system operations
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.E2BSandbox = void 0;
-exports.createSandbox = createSandbox;
-const events_1 = require("events");
+import { EventEmitter } from 'events';
 /**
  * E2B Sandbox Manager
  */
-class E2BSandbox extends events_1.EventEmitter {
+export class E2BSandbox extends EventEmitter {
     config;
     sandbox = null;
     isConnected = false;
@@ -318,11 +314,10 @@ class E2BSandbox extends events_1.EventEmitter {
         return this.mockMode;
     }
 }
-exports.E2BSandbox = E2BSandbox;
 /**
  * Create sandbox instance
  */
-function createSandbox(config) {
+export function createSandbox(config) {
     return new E2BSandbox(config);
 }
 //# sourceMappingURL=e2b-sandbox.js.map

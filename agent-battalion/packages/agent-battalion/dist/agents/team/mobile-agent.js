@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Mobile Agent
  *
@@ -9,10 +8,8 @@
  * - Platform-specific code
  * - Mobile best practices
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MobileAgent = void 0;
-const base_team_agent_js_1 = require("../base-team-agent.js");
-class MobileAgent extends base_team_agent_js_1.BaseTeamAgent {
+import { BaseTeamAgent } from '../base-team-agent.js';
+export class MobileAgent extends BaseTeamAgent {
     constructor(memory, tools, messageBus) {
         const profile = {
             id: 'mobile-agent',
@@ -1517,5 +1514,4 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return files;
     }
 }
-exports.MobileAgent = MobileAgent;
 //# sourceMappingURL=mobile-agent.js.map

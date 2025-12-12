@@ -1,13 +1,18 @@
 {
   "name": "@meta/agent-battalion",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "AI-powered full-stack app generator system with multi-agent collaboration",
   "main": "dist/web/server.js",
   "types": "dist/web/server.d.ts",
+  "type": "module",
+  "bin": {
+    "agent-battalion": "./dist/cli/index.js"
+  },
   "scripts": {
     "dev": "tsx watch src/web/server.ts",
     "build": "tsc",
     "start": "node dist/web/server.js",
+    "cli": "tsx src/cli/index.ts",
     "worker": "tsx src/temporal/worker.ts",
     "worker:dev": "tsx watch src/temporal/worker.ts",
     "test": "vitest run",
@@ -25,6 +30,7 @@
     "@temporalio/worker": "^1.9.0",
     "@temporalio/workflow": "^1.9.0",
     "@temporalio/activity": "^1.9.0",
+    "commander": "^12.0.0",
     "express": "^4.18.2",
     "socket.io": "^4.7.2",
     "cors": "^2.8.5",

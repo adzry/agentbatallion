@@ -1,30 +1,26 @@
-"use strict";
 /**
  * Hybrid Mission Workflow
  *
  * Orchestrates the app generation process using Temporal workflows
  * and LangGraph agents for intelligent decision-making.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateRequirements = exports.cancelGeneration = exports.getProgress = void 0;
-exports.hybridMissionWorkflow = hybridMissionWorkflow;
-const workflow_1 = require("@temporalio/workflow");
+import { proxyActivities, defineQuery, defineSignal, setHandler, } from '@temporalio/workflow';
 // Activity proxies
-const { analyzeRequirements, planArchitecture, generateCode, reviewCode, runTests } = (0, workflow_1.proxyActivities)({
+const { analyzeRequirements, planArchitecture, generateCode, reviewCode, runTests } = proxyActivities({
     startToCloseTimeout: '5 minutes',
     retry: {
         maximumAttempts: 3,
     },
 });
 // Query definitions
-exports.getProgress = (0, workflow_1.defineQuery)('getProgress');
+export const getProgress = defineQuery('getProgress');
 // Signal definitions
-exports.cancelGeneration = (0, workflow_1.defineSignal)('cancelGeneration');
-exports.updateRequirements = (0, workflow_1.defineSignal)('updateRequirements');
+export const cancelGeneration = defineSignal('cancelGeneration');
+export const updateRequirements = defineSignal('updateRequirements');
 /**
  * Main mission workflow
  */
-async function hybridMissionWorkflow(input) {
+export async function hybridMissionWorkflow(input) {
     const startTime = Date.now();
     let cancelled = false;
     let currentProgress = {
@@ -37,12 +33,12 @@ async function hybridMissionWorkflow(input) {
     };
     let files = [];
     // Set up query handler
-    (0, workflow_1.setHandler)(exports.getProgress, () => currentProgress);
+    setHandler(getProgress, () => currentProgress);
     // Set up signal handlers
-    (0, workflow_1.setHandler)(exports.cancelGeneration, () => {
+    setHandler(cancelGeneration, () => {
         cancelled = true;
     });
-    (0, workflow_1.setHandler)(exports.updateRequirements, (newPrompt) => {
+    setHandler(updateRequirements, (newPrompt) => {
         input.prompt = newPrompt;
     });
     const updateProgress = (phase, step, progress, message) => {

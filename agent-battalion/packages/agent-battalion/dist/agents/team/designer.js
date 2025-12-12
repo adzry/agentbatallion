@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Designer Agent
  *
@@ -9,10 +8,8 @@
  * - Ensuring visual consistency
  * - Creating responsive layouts
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.DesignerAgent = void 0;
-const base_team_agent_js_1 = require("../base-team-agent.js");
-class DesignerAgent extends base_team_agent_js_1.BaseTeamAgent {
+import { BaseTeamAgent } from '../base-team-agent.js';
+export class DesignerAgent extends BaseTeamAgent {
     constructor(memory, tools, messageBus) {
         const profile = {
             id: 'designer-agent',
@@ -594,5 +591,4 @@ ${Object.entries(system.colors).map(([name, value]) => `    --${name}: ${value};
         return {};
     }
 }
-exports.DesignerAgent = DesignerAgent;
 //# sourceMappingURL=designer.js.map

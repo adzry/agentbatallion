@@ -1,4 +1,3 @@
-"use strict";
 /**
  * LangGraph Bridge
  *
@@ -6,21 +5,15 @@
  * This bridge allows Temporal workflows to invoke LangGraph agents while
  * maintaining proper error handling and observability.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.LangGraphBridge = void 0;
-exports.createAnalyzerBridge = createAnalyzerBridge;
-exports.createPlannerBridge = createPlannerBridge;
-exports.createCoordinatorBridge = createCoordinatorBridge;
-exports.invokeLangGraphAgent = invokeLangGraphAgent;
-const analyzer_agent_js_1 = require("../../langgraph/agents/analyzer-agent.js");
-const planner_agent_js_1 = require("../../langgraph/agents/planner-agent.js");
-const coordinator_agent_js_1 = require("../../langgraph/agents/coordinator-agent.js");
+import { AnalyzerAgent } from '../../langgraph/agents/analyzer-agent.js';
+import { PlannerAgent } from '../../langgraph/agents/planner-agent.js';
+import { CoordinatorAgent } from '../../langgraph/agents/coordinator-agent.js';
 /**
  * LangGraph Agent Bridge
  *
  * Wraps LangGraph agent execution with Temporal-friendly error handling
  */
-class LangGraphBridge {
+export class LangGraphBridge {
     config;
     constructor(config = {}) {
         this.config = {
@@ -66,40 +59,39 @@ class LangGraphBridge {
         }
     }
 }
-exports.LangGraphBridge = LangGraphBridge;
 /**
  * Create a bridge for the analyzer agent
  */
-function createAnalyzerBridge(config) {
+export function createAnalyzerBridge(config) {
     return new LangGraphBridge(config);
 }
 /**
  * Create a bridge for the planner agent
  */
-function createPlannerBridge(config) {
+export function createPlannerBridge(config) {
     return new LangGraphBridge(config);
 }
 /**
  * Create a bridge for the coordinator agent
  */
-function createCoordinatorBridge(config) {
+export function createCoordinatorBridge(config) {
     return new LangGraphBridge(config);
 }
 /**
  * Utility function to safely invoke any LangGraph agent from a Temporal activity
  */
-async function invokeLangGraphAgent(agentType, input, config) {
+export async function invokeLangGraphAgent(agentType, input, config) {
     const bridge = new LangGraphBridge(config);
     let agent;
     switch (agentType) {
         case 'analyzer':
-            agent = new analyzer_agent_js_1.AnalyzerAgent();
+            agent = new AnalyzerAgent();
             break;
         case 'planner':
-            agent = new planner_agent_js_1.PlannerAgent();
+            agent = new PlannerAgent();
             break;
         case 'coordinator':
-            agent = new coordinator_agent_js_1.CoordinatorAgent();
+            agent = new CoordinatorAgent();
             break;
         default:
             throw new Error(`Unknown agent type: ${agentType}`);

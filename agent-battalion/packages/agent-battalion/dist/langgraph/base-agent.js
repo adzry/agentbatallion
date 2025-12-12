@@ -1,16 +1,11 @@
-"use strict";
 /**
  * Base Agent
  *
  * Abstract base class for all LangGraph agents in the Agent Battalion system.
  * Provides common functionality for state management and agent execution.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseAgent = void 0;
-exports.createProcessingNode = createProcessingNode;
-exports.createConditionalEdge = createConditionalEdge;
-const messages_1 = require("@langchain/core/messages");
-const universal_provider_js_1 = require("../llm/universal-provider.js");
+import { SystemMessage } from '@langchain/core/messages';
+import { createDefaultProvider } from '../llm/universal-provider.js';
 /**
  * Abstract Base Agent class
  *
@@ -18,7 +13,7 @@ const universal_provider_js_1 = require("../llm/universal-provider.js");
  * to avoid version compatibility issues. Production implementations should
  * use the full LangGraph StateGraph when API is stable.
  */
-class BaseAgent {
+export class BaseAgent {
     name;
     description;
     llm = null;
@@ -48,7 +43,7 @@ class BaseAgent {
     initLLM() {
         if (!this.llm) {
             try {
-                const provider = (0, universal_provider_js_1.createDefaultProvider)();
+                const provider = createDefaultProvider();
                 this.llm = provider.getLLM();
             }
             catch (error) {
@@ -70,7 +65,7 @@ class BaseAgent {
      */
     createInitialState(input) {
         return {
-            messages: [new messages_1.SystemMessage(this.getSystemPrompt())],
+            messages: [new SystemMessage(this.getSystemPrompt())],
             input,
             output: null,
             metadata: {
@@ -113,11 +108,10 @@ class BaseAgent {
         };
     }
 }
-exports.BaseAgent = BaseAgent;
 /**
  * Helper function to create a simple processing node
  */
-function createProcessingNode(name, processor) {
+export function createProcessingNode(name, processor) {
     return async (state) => {
         const updates = await processor(state);
         return {
@@ -130,7 +124,7 @@ function createProcessingNode(name, processor) {
 /**
  * Helper function to create a conditional edge
  */
-function createConditionalEdge(condition) {
+export function createConditionalEdge(condition) {
     return condition;
 }
 //# sourceMappingURL=base-agent.js.map

@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Message Bus
  *
@@ -8,12 +7,9 @@
  * - Event subscription and publishing
  * - Message queuing and delivery
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MessageBus = void 0;
-exports.createMessageBus = createMessageBus;
-const events_1 = require("events");
-const uuid_1 = require("uuid");
-class MessageBus extends events_1.EventEmitter {
+import { EventEmitter } from 'events';
+import { v4 as uuidv4 } from 'uuid';
+export class MessageBus extends EventEmitter {
     subscriptions = new Map();
     messageQueue = new Map();
     messageHistory = [];
@@ -31,7 +27,7 @@ class MessageBus extends events_1.EventEmitter {
      */
     subscribe(agentId, handler) {
         const subscription = {
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             agentId,
             handler,
         };
@@ -59,7 +55,7 @@ class MessageBus extends events_1.EventEmitter {
      */
     send(to, data, options = {}) {
         const message = {
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             from: options.from || 'system',
             to,
             type: data.type || 'message',
@@ -101,7 +97,7 @@ class MessageBus extends events_1.EventEmitter {
      */
     async request(to, data, options = {}) {
         return new Promise((resolve, reject) => {
-            const requestId = (0, uuid_1.v4)();
+            const requestId = uuidv4();
             const timeout = options.timeout || this.config.messageTimeout;
             // Set up response handler
             const responseHandler = (message) => {
@@ -234,11 +230,10 @@ class MessageBus extends events_1.EventEmitter {
         }
     }
 }
-exports.MessageBus = MessageBus;
 /**
  * Create a shared message bus instance
  */
-function createMessageBus(config) {
+export function createMessageBus(config) {
     return new MessageBus(config);
 }
 //# sourceMappingURL=message-bus.js.map

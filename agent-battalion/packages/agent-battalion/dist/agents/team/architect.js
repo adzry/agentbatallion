@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Architect Agent
  *
@@ -9,10 +8,8 @@
  * - Making technology decisions
  * - Creating technical specifications
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ArchitectAgent = void 0;
-const base_team_agent_js_1 = require("../base-team-agent.js");
-class ArchitectAgent extends base_team_agent_js_1.BaseTeamAgent {
+import { BaseTeamAgent } from '../base-team-agent.js';
+export class ArchitectAgent extends BaseTeamAgent {
     constructor(memory, tools, messageBus) {
         const profile = {
             id: 'architect-agent',
@@ -490,5 +487,4 @@ ${fileStructure.map(f => f).join('\n')}
         return { optimized: true };
     }
 }
-exports.ArchitectAgent = ArchitectAgent;
 //# sourceMappingURL=architect.js.map

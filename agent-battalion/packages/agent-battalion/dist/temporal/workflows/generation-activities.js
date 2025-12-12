@@ -1,48 +1,35 @@
-"use strict";
 /**
  * Generation Activities - Temporal Activity Definitions
  *
  * These activities are executed by the Temporal worker and can be
  * retried, timed out, and monitored independently.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.analyzeRequirements = analyzeRequirements;
-exports.designArchitecture = designArchitecture;
-exports.createDesignSystem = createDesignSystem;
-exports.generateFrontend = generateFrontend;
-exports.generateBackend = generateBackend;
-exports.reviewCode = reviewCode;
-exports.auditSecurity = auditSecurity;
-exports.requestFeedback = requestFeedback;
-exports.deployToSandbox = deployToSandbox;
-exports.storeFiles = storeFiles;
-exports.sendNotification = sendNotification;
-const memory_manager_js_1 = require("../../memory/memory-manager.js");
-const tool_registry_js_1 = require("../../tools/tool-registry.js");
-const message_bus_js_1 = require("../../communication/message-bus.js");
-const product_manager_js_1 = require("../../agents/team/product-manager.js");
-const architect_js_1 = require("../../agents/team/architect.js");
-const designer_js_1 = require("../../agents/team/designer.js");
-const frontend_engineer_js_1 = require("../../agents/team/frontend-engineer.js");
-const qa_engineer_js_1 = require("../../agents/team/qa-engineer.js");
-const backend_engineer_js_1 = require("../../agents/team/backend-engineer.js");
-const security_agent_js_1 = require("../../agents/team/security-agent.js");
+import { MemoryManager } from '../../memory/memory-manager.js';
+import { ToolRegistry } from '../../tools/tool-registry.js';
+import { MessageBus } from '../../communication/message-bus.js';
+import { ProductManagerAgent } from '../../agents/team/product-manager.js';
+import { ArchitectAgent } from '../../agents/team/architect.js';
+import { DesignerAgent } from '../../agents/team/designer.js';
+import { FrontendEngineerAgent } from '../../agents/team/frontend-engineer.js';
+import { QAEngineerAgent } from '../../agents/team/qa-engineer.js';
+import { BackendEngineerAgent } from '../../agents/team/backend-engineer.js';
+import { SecurityAgent } from '../../agents/team/security-agent.js';
 // Shared instances (per worker)
-const memory = new memory_manager_js_1.MemoryManager();
-const tools = new tool_registry_js_1.ToolRegistry();
-const messageBus = new message_bus_js_1.MessageBus();
+const memory = new MemoryManager();
+const tools = new ToolRegistry();
+const messageBus = new MessageBus();
 // Agent instances
-const productManager = new product_manager_js_1.ProductManagerAgent(memory, tools, messageBus);
-const architect = new architect_js_1.ArchitectAgent(memory, tools, messageBus);
-const designer = new designer_js_1.DesignerAgent(memory, tools, messageBus);
-const frontendEngineer = new frontend_engineer_js_1.FrontendEngineerAgent(memory, tools, messageBus);
-const qaEngineer = new qa_engineer_js_1.QAEngineerAgent(memory, tools, messageBus);
-const backendEngineer = new backend_engineer_js_1.BackendEngineerAgent(memory, tools, messageBus);
-const securityAgent = new security_agent_js_1.SecurityAgent(memory, tools, messageBus);
+const productManager = new ProductManagerAgent(memory, tools, messageBus);
+const architect = new ArchitectAgent(memory, tools, messageBus);
+const designer = new DesignerAgent(memory, tools, messageBus);
+const frontendEngineer = new FrontendEngineerAgent(memory, tools, messageBus);
+const qaEngineer = new QAEngineerAgent(memory, tools, messageBus);
+const backendEngineer = new BackendEngineerAgent(memory, tools, messageBus);
+const securityAgent = new SecurityAgent(memory, tools, messageBus);
 /**
  * Analyze requirements from user request
  */
-async function analyzeRequirements(projectId, userRequest) {
+export async function analyzeRequirements(projectId, userRequest) {
     console.log(`[Activity] Analyzing requirements for project ${projectId}`);
     memory.setContext('projectId', projectId);
     const result = await productManager.analyzeRequest(userRequest);
@@ -69,7 +56,7 @@ async function analyzeRequirements(projectId, userRequest) {
 /**
  * Design system architecture
  */
-async function designArchitecture(projectId, requirements, context) {
+export async function designArchitecture(projectId, requirements, context) {
     console.log(`[Activity] Designing architecture for project ${projectId}`);
     const result = await architect.designArchitecture(requirements, context);
     // Store architecture spec
@@ -79,7 +66,7 @@ async function designArchitecture(projectId, requirements, context) {
 /**
  * Create design system
  */
-async function createDesignSystem(projectId, requirements, context) {
+export async function createDesignSystem(projectId, requirements, context) {
     console.log(`[Activity] Creating design system for project ${projectId}`);
     const designSystem = await designer.createDesignSystem(requirements, context);
     // Store design system
@@ -91,7 +78,7 @@ async function createDesignSystem(projectId, requirements, context) {
 /**
  * Generate frontend code
  */
-async function generateFrontend(projectId, architecture, designSystem) {
+export async function generateFrontend(projectId, architecture, designSystem) {
     console.log(`[Activity] Generating frontend for project ${projectId}`);
     // Default tech stack
     const techStack = {
@@ -111,7 +98,7 @@ async function generateFrontend(projectId, architecture, designSystem) {
 /**
  * Generate backend code
  */
-async function generateBackend(projectId, requirements, dataModels, architecture) {
+export async function generateBackend(projectId, requirements, dataModels, architecture) {
     console.log(`[Activity] Generating backend for project ${projectId}`);
     const result = await backendEngineer.generateBackend(requirements, dataModels, architecture);
     return result;
@@ -119,7 +106,7 @@ async function generateBackend(projectId, requirements, dataModels, architecture
 /**
  * Review code quality
  */
-async function reviewCode(projectId, files, requirements) {
+export async function reviewCode(projectId, files, requirements) {
     console.log(`[Activity] Reviewing code for project ${projectId}`);
     const report = await qaEngineer.reviewCode(files, requirements);
     return {
@@ -135,7 +122,7 @@ async function reviewCode(projectId, files, requirements) {
 /**
  * Audit security
  */
-async function auditSecurity(projectId, files) {
+export async function auditSecurity(projectId, files) {
     console.log(`[Activity] Auditing security for project ${projectId}`);
     const report = await securityAgent.auditSecurity(files);
     return {
@@ -151,14 +138,14 @@ async function auditSecurity(projectId, files) {
 /**
  * Request human feedback
  */
-async function requestFeedback(projectId, request) {
+export async function requestFeedback(projectId, request) {
     console.log(`[Activity] Requesting feedback for project ${projectId}: ${request.title}`);
     await memory.store('feedback_request', JSON.stringify(request), { tags: ['feedback'] });
 }
 /**
  * Deploy to sandbox
  */
-async function deployToSandbox(projectId, files) {
+export async function deployToSandbox(projectId, files) {
     console.log(`[Activity] Deploying to sandbox for project ${projectId}`);
     return {
         success: true,
@@ -169,7 +156,7 @@ async function deployToSandbox(projectId, files) {
 /**
  * Store project files
  */
-async function storeFiles(projectId, files) {
+export async function storeFiles(projectId, files) {
     console.log(`[Activity] Storing ${files.length} files for project ${projectId}`);
     for (const file of files) {
         await memory.store('file', JSON.stringify(file), { tags: [projectId, 'file'] });
@@ -178,7 +165,7 @@ async function storeFiles(projectId, files) {
 /**
  * Send notification
  */
-async function sendNotification(projectId, type, message) {
+export async function sendNotification(projectId, type, message) {
     console.log(`[Activity] Notification for ${projectId}: ${type} - ${message}`);
 }
 //# sourceMappingURL=generation-activities.js.map

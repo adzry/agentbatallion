@@ -78,6 +78,10 @@ export declare class TeamOrchestrator extends EventEmitter {
      * Reset orchestrator state
      */
     reset(): void;
+    /**
+     * Cleanup and post-process generated files
+     */
+    private cleanupGeneratedFiles;
 }
 /**
  * Create an orchestrator instance

@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Product Manager Agent
  *
@@ -9,11 +8,9 @@
  * - Prioritizing features
  * - Coordinating with the team
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ProductManagerAgent = void 0;
-const uuid_1 = require("uuid");
-const base_team_agent_js_1 = require("../base-team-agent.js");
-class ProductManagerAgent extends base_team_agent_js_1.BaseTeamAgent {
+import { v4 as uuidv4 } from 'uuid';
+import { BaseTeamAgent } from '../base-team-agent.js';
+export class ProductManagerAgent extends BaseTeamAgent {
     constructor(memory, tools, messageBus) {
         const profile = {
             id: 'pm-agent',
@@ -126,7 +123,7 @@ Be specific and actionable.`;
         const aiResponse = await this.promptLLM(prompt, { expectJson: true });
         // Convert AI response to internal format
         const requirements = aiResponse.requirements.map((req) => ({
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             type: req.type,
             priority: req.priority,
             description: req.description,
@@ -226,7 +223,7 @@ Be specific and actionable.`;
         const requirements = [];
         // Core app requirement
         requirements.push({
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             type: 'functional',
             priority: 'must',
             description: `Build a ${analysis.appType} based on user specifications`,
@@ -241,7 +238,7 @@ Be specific and actionable.`;
         for (const feature of analysis.features) {
             const priority = this.determinePriority(feature);
             requirements.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 type: 'functional',
                 priority,
                 description: feature,
@@ -251,7 +248,7 @@ Be specific and actionable.`;
         }
         // Non-functional requirements
         requirements.push({
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             type: 'non_functional',
             priority: 'should',
             description: 'Application should load within 3 seconds',
@@ -259,7 +256,7 @@ Be specific and actionable.`;
             status: 'approved',
         });
         requirements.push({
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             type: 'non_functional',
             priority: 'should',
             description: 'Mobile-responsive design with touch support',
@@ -269,7 +266,7 @@ Be specific and actionable.`;
         // Constraint requirements
         for (const constraint of analysis.constraints) {
             requirements.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 type: 'constraint',
                 priority: 'must',
                 description: constraint,
@@ -397,5 +394,4 @@ ${r.acceptanceCriteria?.map(c => `- [ ] ${c}`).join('\n')}
         return currentReqs;
     }
 }
-exports.ProductManagerAgent = ProductManagerAgent;
 //# sourceMappingURL=product-manager.js.map

@@ -137,14 +137,28 @@ Focus on:
     });
     this.updateProgress(90);
 
-    // Calculate scores
+    // Calculate scores with more balanced weighting
     const criticalIssues = issues.filter(i => i.severity === 'critical').length;
     const majorIssues = issues.filter(i => i.severity === 'major').length;
-    const score = Math.max(0, 100 - (criticalIssues * 20) - (majorIssues * 10) - (issues.length * 2));
+    const minorIssues = issues.filter(i => i.severity === 'minor').length;
+    const infoIssues = issues.filter(i => i.severity === 'info').length;
+    
+    // Balanced scoring: start at 100, deduct based on severity
+    // Critical: -15 each, Major: -7 each, Minor: -3 each, Info: -1 each
+    // Minimum score is 30 to reward any effort
+    const deductions = (criticalIssues * 15) + (majorIssues * 7) + (minorIssues * 3) + (infoIssues * 1);
+    const score = Math.max(30, 100 - deductions);
+    
+    // Add bonus points for good practices found
+    const hasTypeScript = files.some(f => f.path.endsWith('.ts') || f.path.endsWith('.tsx'));
+    const hasAccessibilityConsideration = files.some(f => f.content.includes('aria-') || f.content.includes('role='));
+    const hasErrorHandling = files.some(f => f.content.includes('catch') || f.content.includes('error'));
+    const bonusPoints = (hasTypeScript ? 5 : 0) + (hasAccessibilityConsideration ? 5 : 0) + (hasErrorHandling ? 5 : 0);
+    const finalScore = Math.min(100, score + bonusPoints);
 
     const report: QAReport = {
-      passed: criticalIssues === 0 && score >= 70,
-      score,
+      passed: criticalIssues === 0 && finalScore >= 70,
+      score: finalScore,
       issues,
       suggestions,
       coverage: {

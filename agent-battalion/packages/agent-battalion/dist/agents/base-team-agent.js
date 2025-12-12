@@ -1,16 +1,13 @@
-"use strict";
 /**
  * Base Team Agent - MGX-style Agent Foundation
  *
  * Provides the foundation for all specialized team agents with
  * communication, memory, tool capabilities, and LLM integration.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseTeamAgent = void 0;
-const uuid_1 = require("uuid");
-const events_1 = require("events");
-const llm_service_js_1 = require("../llm/llm-service.js");
-class BaseTeamAgent extends events_1.EventEmitter {
+import { v4 as uuidv4 } from 'uuid';
+import { EventEmitter } from 'events';
+import { createLLMService } from '../llm/llm-service.js';
+export class BaseTeamAgent extends EventEmitter {
     profile;
     state;
     memory;
@@ -26,7 +23,7 @@ class BaseTeamAgent extends events_1.EventEmitter {
         this.tools = tools;
         this.messageBus = messageBus;
         // Initialize LLM service
-        this.llm = (0, llm_service_js_1.createLLMService)();
+        this.llm = createLLMService();
         this.useRealAI = process.env.USE_REAL_AI === 'true';
         this.state = {
             agentId: profile.id,
@@ -146,7 +143,7 @@ class BaseTeamAgent extends events_1.EventEmitter {
     // Create an action
     async act(type, description, executor) {
         const action = {
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             type,
             description,
             status: 'running',
@@ -171,7 +168,7 @@ class BaseTeamAgent extends events_1.EventEmitter {
     // Create an artifact
     createArtifact(type, name, content, path, metadata) {
         const artifact = {
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             type,
             name,
             path,
@@ -190,7 +187,7 @@ class BaseTeamAgent extends events_1.EventEmitter {
     // Handoff to another agent
     async handoff(toAgentId, task, context) {
         const handoff = {
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             fromAgent: this.profile.id,
             toAgent: toAgentId,
             task,
@@ -240,7 +237,7 @@ class BaseTeamAgent extends events_1.EventEmitter {
     // Emit team event
     emitEvent(type, data) {
         const event = {
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             type,
             agentId: this.profile.id,
             data,
@@ -275,5 +272,4 @@ class BaseTeamAgent extends events_1.EventEmitter {
         };
     }
 }
-exports.BaseTeamAgent = BaseTeamAgent;
 //# sourceMappingURL=base-team-agent.js.map

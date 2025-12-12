@@ -1,4 +1,3 @@
-"use strict";
 /**
  * LLM Service - Real AI Integration
  *
@@ -8,11 +7,7 @@
  * - Google (Gemini Pro)
  * - Local (Ollama)
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.LLMService = void 0;
-exports.createLLMService = createLLMService;
-exports.getDefaultLLMService = getDefaultLLMService;
-const events_1 = require("events");
+import { EventEmitter } from 'events';
 // Default models per provider
 const DEFAULT_MODELS = {
     openai: 'gpt-4o-mini',
@@ -26,7 +21,7 @@ const FAILOVER_ORDER = ['anthropic', 'openai', 'google'];
 /**
  * LLM Service Class
  */
-class LLMService extends events_1.EventEmitter {
+export class LLMService extends EventEmitter {
     config;
     requestCount = 0;
     constructor(config) {
@@ -518,18 +513,17 @@ export function Component() {
         return this.config.provider;
     }
 }
-exports.LLMService = LLMService;
 /**
  * Create LLM service instance
  */
-function createLLMService(config) {
+export function createLLMService(config) {
     return new LLMService(config);
 }
 /**
  * Default singleton instance
  */
 let defaultInstance = null;
-function getDefaultLLMService() {
+export function getDefaultLLMService() {
     if (!defaultInstance) {
         defaultInstance = createLLMService();
     }

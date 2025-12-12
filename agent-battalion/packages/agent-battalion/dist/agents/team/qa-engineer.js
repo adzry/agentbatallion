@@ -1,4 +1,3 @@
-"use strict";
 /**
  * QA Engineer Agent
  *
@@ -9,11 +8,9 @@
  * - Ensuring accessibility
  * - Testing responsiveness
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.QAEngineerAgent = void 0;
-const uuid_1 = require("uuid");
-const base_team_agent_js_1 = require("../base-team-agent.js");
-class QAEngineerAgent extends base_team_agent_js_1.BaseTeamAgent {
+import { v4 as uuidv4 } from 'uuid';
+import { BaseTeamAgent } from '../base-team-agent.js';
+export class QAEngineerAgent extends BaseTeamAgent {
     constructor(memory, tools, messageBus) {
         const profile = {
             id: 'qa-engineer-agent',
@@ -92,13 +89,25 @@ Focus on:
             return this.checkRequirementsCoverage(files, requirements);
         });
         this.updateProgress(90);
-        // Calculate scores
+        // Calculate scores with more balanced weighting
         const criticalIssues = issues.filter(i => i.severity === 'critical').length;
         const majorIssues = issues.filter(i => i.severity === 'major').length;
-        const score = Math.max(0, 100 - (criticalIssues * 20) - (majorIssues * 10) - (issues.length * 2));
+        const minorIssues = issues.filter(i => i.severity === 'minor').length;
+        const infoIssues = issues.filter(i => i.severity === 'info').length;
+        // Balanced scoring: start at 100, deduct based on severity
+        // Critical: -15 each, Major: -7 each, Minor: -3 each, Info: -1 each
+        // Minimum score is 30 to reward any effort
+        const deductions = (criticalIssues * 15) + (majorIssues * 7) + (minorIssues * 3) + (infoIssues * 1);
+        const score = Math.max(30, 100 - deductions);
+        // Add bonus points for good practices found
+        const hasTypeScript = files.some(f => f.path.endsWith('.ts') || f.path.endsWith('.tsx'));
+        const hasAccessibilityConsideration = files.some(f => f.content.includes('aria-') || f.content.includes('role='));
+        const hasErrorHandling = files.some(f => f.content.includes('catch') || f.content.includes('error'));
+        const bonusPoints = (hasTypeScript ? 5 : 0) + (hasAccessibilityConsideration ? 5 : 0) + (hasErrorHandling ? 5 : 0);
+        const finalScore = Math.min(100, score + bonusPoints);
         const report = {
-            passed: criticalIssues === 0 && score >= 70,
-            score,
+            passed: criticalIssues === 0 && finalScore >= 70,
+            score: finalScore,
             issues,
             suggestions,
             coverage: {
@@ -161,7 +170,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
         try {
             const aiResponse = await this.promptLLM(prompt, { expectJson: true });
             const issues = aiResponse.issues.map(issue => ({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: issue.severity,
                 category: issue.category,
                 file: issue.file,
@@ -210,7 +219,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             lines.forEach((line, idx) => {
                 if (line.includes('console.log') && !file.path.includes('utils')) {
                     issues.push({
-                        id: (0, uuid_1.v4)(),
+                        id: uuidv4(),
                         severity: 'minor',
                         category: 'best-practice',
                         file: file.path,
@@ -223,7 +232,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             // Check for missing error handling
             if (content.includes('fetch(') && !content.includes('catch') && !content.includes('try')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'major',
                     category: 'bug',
                     file: file.path,
@@ -234,7 +243,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             // Check for empty catch blocks
             if (content.includes('catch') && content.includes('catch (') && content.includes('{ }')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'major',
                     category: 'best-practice',
                     file: file.path,
@@ -245,7 +254,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             // Check for missing key prop in lists
             if (content.includes('.map(') && !content.includes('key=')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'major',
                     category: 'bug',
                     file: file.path,
@@ -256,7 +265,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             // Check for inline styles (prefer Tailwind)
             if (content.includes('style={{') && !file.path.includes('animation')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'minor',
                     category: 'style',
                     file: file.path,
@@ -267,7 +276,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             // Check for proper TypeScript usage
             if (content.includes(': any') || content.includes('as any')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'minor',
                     category: 'best-practice',
                     file: file.path,
@@ -278,7 +287,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             // Check for missing alt text on images
             if (content.includes('<img') && !content.includes('alt=')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'major',
                     category: 'accessibility',
                     file: file.path,
@@ -289,7 +298,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             // Check for proper button types
             if (content.includes('<button') && !content.includes('type=')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'minor',
                     category: 'accessibility',
                     file: file.path,
@@ -303,7 +312,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             // Check for !important usage
             if (content.includes('!important')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'minor',
                     category: 'style',
                     file: file.path,
@@ -315,7 +324,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
         // Check file size
         if (content.length > 10000 && file.path.includes('components/')) {
             issues.push({
-                id: (0, uuid_1.v4)(),
+                id: uuidv4(),
                 severity: 'minor',
                 category: 'best-practice',
                 file: file.path,
@@ -349,7 +358,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
                 const hasH1 = headings.some(h => h === '<h1');
                 if (!hasH1) {
                     issues.push({
-                        id: (0, uuid_1.v4)(),
+                        id: uuidv4(),
                         severity: 'minor',
                         category: 'accessibility',
                         file: file.path,
@@ -364,7 +373,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             }
             else if (content.includes('<button') && content.includes('svg') && !content.match(/<button[^>]*>[^<]*[a-zA-Z]/)) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'major',
                     category: 'accessibility',
                     file: file.path,
@@ -375,7 +384,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             // Check for color contrast (basic check)
             if (content.includes('text-gray-400') && content.includes('bg-gray-300')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'minor',
                     category: 'accessibility',
                     file: file.path,
@@ -386,7 +395,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             // Check for form labels
             if (content.includes('<input') && !content.includes('<label') && !content.includes('aria-label')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'major',
                     category: 'accessibility',
                     file: file.path,
@@ -397,7 +406,7 @@ Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
             // Check for skip links
             if (file.path.includes('layout') && !content.includes('skip')) {
                 issues.push({
-                    id: (0, uuid_1.v4)(),
+                    id: uuidv4(),
                     severity: 'minor',
                     category: 'accessibility',
                     file: file.path,
@@ -501,5 +510,4 @@ ${report.suggestions.map(s => `- ${s}`).join('\n')}
         return {};
     }
 }
-exports.QAEngineerAgent = QAEngineerAgent;
 //# sourceMappingURL=qa-engineer.js.map

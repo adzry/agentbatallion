@@ -1,32 +1,21 @@
-"use strict";
 /**
  * Temporal Client
  *
  * Manages connection to Temporal server and workflow execution
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.initTemporalClient = initTemporalClient;
-exports.getTemporalClient = getTemporalClient;
-exports.startMission = startMission;
-exports.getMissionResult = getMissionResult;
-exports.getMissionProgress = getMissionProgress;
-exports.cancelMission = cancelMission;
-exports.signalMission = signalMission;
-exports.listRunningMissions = listRunningMissions;
-exports.closeTemporalClient = closeTemporalClient;
-const client_1 = require("@temporalio/client");
+import { Client, Connection } from '@temporalio/client';
 let client = null;
 /**
  * Initialize Temporal client connection
  */
-async function initTemporalClient() {
+export async function initTemporalClient() {
     if (client)
         return client;
     const address = process.env.TEMPORAL_ADDRESS || 'localhost:7233';
-    const connection = await client_1.Connection.connect({
+    const connection = await Connection.connect({
         address,
     });
-    client = new client_1.Client({
+    client = new Client({
         connection,
         namespace: process.env.TEMPORAL_NAMESPACE || 'default',
     });
@@ -36,7 +25,7 @@ async function initTemporalClient() {
 /**
  * Get the Temporal client instance
  */
-function getTemporalClient() {
+export function getTemporalClient() {
     if (!client) {
         throw new Error('Temporal client not initialized. Call initTemporalClient() first.');
     }
@@ -45,7 +34,7 @@ function getTemporalClient() {
 /**
  * Start a new mission workflow
  */
-async function startMission(input) {
+export async function startMission(input) {
     const client = getTemporalClient();
     const taskQueue = process.env.TEMPORAL_TASK_QUEUE || 'agent-battalion-queue';
     const handle = await client.workflow.start('hybridMissionWorkflow', {
@@ -59,7 +48,7 @@ async function startMission(input) {
 /**
  * Get mission result
  */
-async function getMissionResult(workflowId) {
+export async function getMissionResult(workflowId) {
     const client = getTemporalClient();
     const handle = client.workflow.getHandle(workflowId);
     return await handle.result();
@@ -67,7 +56,7 @@ async function getMissionResult(workflowId) {
 /**
  * Query mission progress
  */
-async function getMissionProgress(workflowId) {
+export async function getMissionProgress(workflowId) {
     const client = getTemporalClient();
     const handle = client.workflow.getHandle(workflowId);
     return await handle.query('getProgress');
@@ -75,7 +64,7 @@ async function getMissionProgress(workflowId) {
 /**
  * Cancel a running mission
  */
-async function cancelMission(workflowId) {
+export async function cancelMission(workflowId) {
     const client = getTemporalClient();
     const handle = client.workflow.getHandle(workflowId);
     await handle.cancel();
@@ -84,7 +73,7 @@ async function cancelMission(workflowId) {
 /**
  * Signal a mission workflow
  */
-async function signalMission(workflowId, signalName, args) {
+export async function signalMission(workflowId, signalName, args) {
     const client = getTemporalClient();
     const handle = client.workflow.getHandle(workflowId);
     await handle.signal(signalName, ...args);
@@ -92,7 +81,7 @@ async function signalMission(workflowId, signalName, args) {
 /**
  * List running missions
  */
-async function listRunningMissions() {
+export async function listRunningMissions() {
     const client = getTemporalClient();
     const workflows = client.workflow.list({
         query: "ExecutionStatus = 'Running'",
@@ -106,7 +95,7 @@ async function listRunningMissions() {
 /**
  * Close the Temporal connection
  */
-async function closeTemporalClient() {
+export async function closeTemporalClient() {
     if (client) {
         await client.connection.close();
         client = null;

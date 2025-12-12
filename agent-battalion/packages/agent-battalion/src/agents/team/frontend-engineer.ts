@@ -155,6 +155,20 @@ Best practices:
       .map(([name, value]) => `${name}: ${value}`)
       .join(', ');
 
+    // Common quality guidelines for all prompts
+    const qualityGuidelines = `
+CRITICAL CODE QUALITY RULES:
+1. ALWAYS add aria-label to buttons that only contain icons
+2. ALWAYS add alt="" to decorative images, descriptive alt for content images
+3. ALWAYS use semantic HTML (main, section, header, footer, nav, article)
+4. ALWAYS include proper TypeScript types - NO 'any' types
+5. ALWAYS add key prop when mapping arrays
+6. ALWAYS handle loading and error states in components
+7. Use className instead of inline styles
+8. Add proper spacing with Tailwind (p-4, m-2, gap-4, etc.)
+9. Use forwardRef for reusable components that need ref access
+10. Ensure color contrast meets WCAG AA standards`;
+
     let prompt = '';
 
     if (filePath === 'app/page.tsx') {
@@ -168,16 +182,19 @@ Design colors: ${colorsList}
 Theme: ${designSystem.theme}
 
 Requirements:
-- Use Next.js 15 App Router (no 'use client' unless needed)
+- Use Next.js 15 App Router (Server Component by default)
 - Import Header from '@/components/layout/header'
 - Import Footer from '@/components/layout/footer'
 - Create a beautiful hero section with gradient backgrounds
 - Add a features section if the architecture includes it
-- Use Tailwind CSS classes
-- Make it responsive and visually stunning
+- Use Tailwind CSS classes for all styling
+- Make it responsive with mobile-first approach
 - Include proper TypeScript types
+- Use semantic HTML elements (main, section, etc.)
 
-Return ONLY the TypeScript/TSX code, no markdown code blocks or explanations.`;
+${qualityGuidelines}
+
+Return ONLY the complete TypeScript/TSX code. No markdown, no explanations, no code fences.`;
     } else if (filePath.includes('hero-section')) {
       prompt = `Generate a beautiful Hero Section React component:
 
@@ -187,16 +204,19 @@ Design colors: ${colorsList}
 Theme: ${designSystem.theme}
 
 Requirements:
-- Export a named function HeroSection
+- Export a named function HeroSection (Server Component)
 - Create an eye-catching hero with headline, description, and CTA buttons
 - Add decorative background elements (gradients, blurs)
-- Include subtle animations (fade-in, slide-up)
-- Use Tailwind CSS classes
+- Include CSS animations via Tailwind (animate-fade-in, etc.)
+- Use Tailwind CSS classes exclusively
 - Make it responsive (mobile-first)
 - Include social proof section at the bottom
-- Use proper TypeScript types
+- All buttons must have type="button" attribute
+- Use semantic HTML (section, h1 for main heading, etc.)
 
-Return ONLY the TypeScript/TSX code, no markdown code blocks or explanations.`;
+${qualityGuidelines}
+
+Return ONLY the complete TypeScript/TSX code. No markdown, no explanations, no code fences.`;
     } else if (filePath.includes('features-section')) {
       prompt = `Generate a Features Section React component:
 
@@ -206,16 +226,19 @@ Design colors: ${colorsList}
 Theme: ${designSystem.theme}
 
 Requirements:
-- Export a named function FeaturesSection
-- Create a grid of 6 feature cards with icons, titles, and descriptions
+- Export a named function FeaturesSection (Server Component)
+- Create a grid of 6 feature cards with emoji icons, titles, and descriptions
 - Features should be relevant to: ${projectDescription}
-- Add hover effects on cards
-- Use Tailwind CSS classes
-- Make it responsive (2 cols on mobile, 3 on desktop)
-- Include section header with title and subtitle
-- Use proper TypeScript types
+- Add hover effects on cards (hover:shadow-lg, hover:scale-105, etc.)
+- Use Tailwind CSS classes exclusively
+- Make it responsive (1 col mobile, 2 cols tablet, 3 cols desktop)
+- Include section header with h2 title and subtitle paragraph
+- Each feature card must have a unique key when mapping
+- Use semantic HTML (section with id="features", article for cards)
 
-Return ONLY the TypeScript/TSX code, no markdown code blocks or explanations.`;
+${qualityGuidelines}
+
+Return ONLY the complete TypeScript/TSX code. No markdown, no explanations, no code fences.`;
     }
 
     if (!prompt) return null;
@@ -223,17 +246,43 @@ Return ONLY the TypeScript/TSX code, no markdown code blocks or explanations.`;
     try {
       const response = await this.promptLLM<string>(prompt);
       
-      // Clean the response (remove markdown code blocks if present)
-      let cleanedCode = response
-        .replace(/^```(?:tsx|typescript|javascript)?\n?/gm, '')
-        .replace(/```$/gm, '')
-        .trim();
+      // Clean and post-process the generated code
+      let cleanedCode = this.postProcessCode(response);
 
       return cleanedCode;
     } catch (error) {
       this.think(`AI generation failed for ${filePath}, using template`);
       return null;
     }
+  }
+
+  /**
+   * Post-process generated code to ensure quality
+   */
+  private postProcessCode(code: string): string {
+    let processed = code
+      // Remove markdown code blocks if present
+      .replace(/^```(?:tsx|typescript|javascript|jsx)?\n?/gm, '')
+      .replace(/```$/gm, '')
+      .trim();
+
+    // Ensure button type attributes
+    processed = processed.replace(
+      /<button(?![^>]*type=)([^>]*)>/g,
+      '<button type="button"$1>'
+    );
+
+    // Ensure img elements have alt attribute
+    processed = processed.replace(
+      /<img(?![^>]*alt=)([^>]*)>/g,
+      '<img alt=""$1>'
+    );
+
+    // Fix common issues with quotes
+    processed = processed.replace(/className='/g, "className=\"");
+    processed = processed.replace(/'>/g, "\">");
+
+    return processed;
   }
 
   protected async executeTask(task: AgentTask): Promise<any> {

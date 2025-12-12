@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Generation Workflow - Temporal Workflow Definition
  *
@@ -8,12 +7,9 @@
  * - Human feedback integration
  * - Checkpointing
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelSignal = exports.feedbackSignal = void 0;
-exports.generationWorkflow = generationWorkflow;
-const workflow_1 = require("@temporalio/workflow");
+import { proxyActivities, sleep, defineSignal, setHandler, condition } from '@temporalio/workflow';
 // Proxy activities with retry configuration
-const acts = (0, workflow_1.proxyActivities)({
+const acts = proxyActivities({
     startToCloseTimeout: '5 minutes',
     retry: {
         maximumAttempts: 3,
@@ -22,12 +18,12 @@ const acts = (0, workflow_1.proxyActivities)({
     },
 });
 // Signals
-exports.feedbackSignal = (0, workflow_1.defineSignal)('feedback');
-exports.cancelSignal = (0, workflow_1.defineSignal)('cancel');
+export const feedbackSignal = defineSignal('feedback');
+export const cancelSignal = defineSignal('cancel');
 /**
  * Main Generation Workflow
  */
-async function generationWorkflow(input) {
+export async function generationWorkflow(input) {
     const startTime = Date.now();
     const maxIterations = input.config?.maxIterations || 3;
     let files = [];
@@ -36,11 +32,11 @@ async function generationWorkflow(input) {
     let awaitingFeedback = false;
     let feedbackResponse = null;
     // Set up signal handlers
-    (0, workflow_1.setHandler)(exports.feedbackSignal, (response) => {
+    setHandler(feedbackSignal, (response) => {
         feedbackResponse = response;
         awaitingFeedback = false;
     });
-    (0, workflow_1.setHandler)(exports.cancelSignal, () => {
+    setHandler(cancelSignal, () => {
         cancelled = true;
     });
     try {
@@ -58,7 +54,7 @@ async function generationWorkflow(input) {
                 agentId: 'product-manager',
             });
             // Wait for feedback signal
-            await (0, workflow_1.condition)(() => !awaitingFeedback || cancelled, '10m');
+            await condition(() => !awaitingFeedback || cancelled, '10m');
             const response = feedbackResponse;
             if (response?.approved === false) {
                 throw new Error('Requirements rejected by user');
@@ -97,7 +93,7 @@ async function generationWorkflow(input) {
                 break;
             }
             // Brief pause between iterations
-            await (0, workflow_1.sleep)('1s');
+            await sleep('1s');
         } while (iteration < maxIterations);
         // Final phase
         const duration = Date.now() - startTime;

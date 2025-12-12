@@ -1,14 +1,11 @@
-"use strict";
 /**
  * AI Agent - Real LLM-Powered Agent Base
  *
  * Extends BaseTeamAgent with actual AI capabilities using LLM service
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AIAgent = void 0;
-const base_team_agent_js_1 = require("./base-team-agent.js");
-const llm_service_js_1 = require("../llm/llm-service.js");
-class AIAgent extends base_team_agent_js_1.BaseTeamAgent {
+import { BaseTeamAgent } from './base-team-agent.js';
+import { createLLMService } from '../llm/llm-service.js';
+export class AIAgent extends BaseTeamAgent {
     llm;
     useRealAI;
     conversationHistory = [];
@@ -16,7 +13,7 @@ class AIAgent extends base_team_agent_js_1.BaseTeamAgent {
         super(profile, memory, tools, messageBus);
         this.useRealAI = config?.useRealAI ??
             (process.env.USE_REAL_AI === 'true');
-        this.llm = (0, llm_service_js_1.createLLMService)(config?.llmConfig);
+        this.llm = createLLMService(config?.llmConfig);
         // Initialize conversation with system prompt
         this.conversationHistory = [{
                 role: 'system',
@@ -145,5 +142,4 @@ Respond with only the code, no markdown code blocks.`;
         return this.llm.isRealLLM();
     }
 }
-exports.AIAgent = AIAgent;
 //# sourceMappingURL=ai-agent.js.map

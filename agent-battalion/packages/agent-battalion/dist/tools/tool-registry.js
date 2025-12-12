@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Tool Registry
  *
@@ -8,11 +7,8 @@
  * - Web search
  * - Custom tools
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ToolRegistry = void 0;
-exports.createToolRegistry = createToolRegistry;
-const uuid_1 = require("uuid");
-class ToolRegistry {
+import { v4 as uuidv4 } from 'uuid';
+export class ToolRegistry {
     tools = new Map();
     executionLog = [];
     constructor() {
@@ -237,7 +233,7 @@ class ToolRegistry {
             category: 'utility',
             parameters: [],
             execute: async () => {
-                return { uuid: (0, uuid_1.v4)() };
+                return { uuid: uuidv4() };
             },
         });
         // Calculate hash tool
@@ -265,11 +261,10 @@ class ToolRegistry {
         });
     }
 }
-exports.ToolRegistry = ToolRegistry;
 /**
  * Create a tool registry instance
  */
-function createToolRegistry() {
+export function createToolRegistry() {
     return new ToolRegistry();
 }
 //# sourceMappingURL=tool-registry.js.map

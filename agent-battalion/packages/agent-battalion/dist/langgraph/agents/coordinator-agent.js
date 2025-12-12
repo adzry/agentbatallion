@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Coordinator Agent
  *
@@ -6,11 +5,8 @@
  * and ensuring files are generated in the correct order with proper
  * dependencies.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CoordinatorAgent = void 0;
-exports.runCoordinatorAgent = runCoordinatorAgent;
-const base_agent_js_1 = require("../base-agent.js");
-class CoordinatorAgent extends base_agent_js_1.BaseAgent {
+import { BaseAgent } from '../base-agent.js';
+export class CoordinatorAgent extends BaseAgent {
     constructor() {
         super('coordinator', 'Coordinates code generation across multiple agents');
     }
@@ -401,11 +397,10 @@ export function ${name}({ className = '' }: ${name}Props) {
 `;
     }
 }
-exports.CoordinatorAgent = CoordinatorAgent;
 /**
  * Run the coordinator agent
  */
-async function runCoordinatorAgent(plan, projectName) {
+export async function runCoordinatorAgent(plan, projectName) {
     const agent = new CoordinatorAgent();
     const result = await agent.run({ plan, projectName });
     return result;
