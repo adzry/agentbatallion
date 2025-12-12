@@ -12,120 +12,39 @@
       theme: {
         extend: {
           colors: {
-            primary: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              200: '#bfdbfe',
-              300: '#93c5fd',
-              400: '#60a5fa',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
-              800: '#1e40af',
-              900: '#1e3a8a',
-            },
+            primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
+            surface: { DEFAULT: '#1e293b', hover: '#334155' },
           },
           animation: {
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'gradient': 'gradient 8s linear infinite',
+            'pulse-slow': 'pulse 3s ease-in-out infinite',
+            'bounce-slow': 'bounce 2s ease-in-out infinite',
             'typing': 'typing 1.5s ease-in-out infinite',
+            'slide-in': 'slideIn 0.3s ease-out',
           },
           keyframes: {
-            gradient: {
-              '0%, 100%': { backgroundPosition: '0% 50%' },
-              '50%': { backgroundPosition: '100% 50%' },
-            },
-            typing: {
-              '0%, 100%': { opacity: 0.3 },
-              '50%': { opacity: 1 },
-            },
+            typing: { '0%, 100%': { opacity: 0.3 }, '50%': { opacity: 1 } },
+            slideIn: { '0%': { transform: 'translateY(10px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } },
           },
         },
       },
     };
   </script>
   <style>
-    body {
-      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-      min-height: 100vh;
-    }
-    
-    .glass {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .glass-dark {
-      background: rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    
-    .gradient-text {
-      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    
-    .gradient-border {
-      position: relative;
-    }
-    
-    .gradient-border::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      padding: 1px;
-      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-    }
-    
-    .progress-ring {
-      transition: stroke-dashoffset 0.5s ease-in-out;
-      transform: rotate(-90deg);
-      transform-origin: 50% 50%;
-    }
-    
-    .file-tree-line {
-      border-left: 1px dashed rgba(148, 163, 184, 0.3);
-    }
-    
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: rgba(30, 41, 59, 0.5);
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: rgba(100, 116, 139, 0.5);
-      border-radius: 3px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(100, 116, 139, 0.8);
-    }
-    
-    /* Typing indicator dots */
-    .typing-dot {
-      animation: typing 1.4s infinite ease-in-out;
-    }
-    
+    body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); min-height: 100vh; }
+    .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-dark { background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .gradient-text { background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .typing-dot { animation: typing 1.4s infinite ease-in-out; }
     .typing-dot:nth-child(1) { animation-delay: 0s; }
     .typing-dot:nth-child(2) { animation-delay: 0.2s; }
     .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-    .code-block {
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.5); }
+    ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.5); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.8); }
+    .agent-card.active { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+    .agent-card.active .status-dot { animation: pulse 1s infinite; }
+    .code-block { font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; }
   </style>
 </head>
 <body class="dark text-white">
@@ -135,20 +54,20 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
               <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
             </div>
             <div>
               <h1 class="text-xl font-bold gradient-text">Agent Battalion</h1>
-              <p class="text-xs text-slate-400">AI-Powered App Generator</p>
+              <p class="text-xs text-slate-400">MGX-Style Multi-Agent System</p>
             </div>
           </div>
           <div class="flex items-center gap-4">
             <div id="status-indicator" class="flex items-center gap-2 px-3 py-1.5 rounded-full glass text-sm">
-              <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-              <span class="text-slate-300">Ready</span>
+              <span class="status-dot w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+              <span class="text-slate-300">5 Agents Ready</span>
             </div>
           </div>
         </div>
@@ -156,39 +75,55 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-      <div class="grid lg:grid-cols-2 gap-8 h-full">
-        
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+      <!-- Agent Team Panel -->
+      <div id="team-panel" class="mb-6">
+        <h2 class="text-sm font-medium text-slate-400 mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          AI Team
+        </h2>
+        <div class="flex gap-3 overflow-x-auto pb-2" id="agent-cards">
+          <!-- Agent cards will be inserted here -->
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-6 h-full">
         <!-- Left Panel - Chat Interface -->
         <div class="flex flex-col glass rounded-2xl overflow-hidden">
-          <div class="px-6 py-4 border-b border-white/10">
+          <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
             <h2 class="text-lg font-semibold flex items-center gap-2">
               <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
               </svg>
-              Chat
+              Team Chat
             </h2>
+            <span class="text-xs text-slate-400" id="message-count">0 messages</span>
           </div>
           
           <!-- Messages Container -->
-          <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4" style="max-height: 500px;">
+          <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4" style="max-height: 450px;">
             <!-- Welcome Message -->
-            <div class="flex gap-3">
-              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0 flex items-center justify-center">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                </svg>
-              </div>
-              <div class="glass-dark rounded-xl rounded-tl-none px-4 py-3 max-w-[85%]">
-                <p class="text-slate-200">
-                  👋 Welcome to <span class="font-semibold text-blue-400">Agent Battalion</span>! 
-                </p>
-                <p class="text-slate-300 mt-2">
-                  I can generate complete Next.js 15 applications from your description. Just tell me what you want to build!
-                </p>
-                <p class="text-slate-400 text-sm mt-3">
-                  <strong>Try:</strong> "Create a portfolio website with hero section and project gallery"
-                </p>
+            <div class="flex gap-3 animate-slide-in">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0 flex items-center justify-center text-lg">🚀</div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="font-medium text-blue-400">System</span>
+                  <span class="text-xs text-slate-500">Just now</span>
+                </div>
+                <div class="glass-dark rounded-xl rounded-tl-none px-4 py-3">
+                  <p class="text-slate-200">Welcome to <span class="font-semibold text-blue-400">Agent Battalion</span>!</p>
+                  <p class="text-slate-300 mt-2">Our team of 5 AI agents is ready to build your application:</p>
+                  <ul class="mt-2 space-y-1 text-sm text-slate-400">
+                    <li>👔 <strong>Alex</strong> - Product Manager</li>
+                    <li>🏗️ <strong>Sam</strong> - Architect</li>
+                    <li>🎨 <strong>Maya</strong> - Designer</li>
+                    <li>💻 <strong>Jordan</strong> - Frontend Engineer</li>
+                    <li>🔍 <strong>Riley</strong> - QA Engineer</li>
+                  </ul>
+                  <p class="text-slate-400 text-sm mt-3">Describe your app and watch us collaborate!</p>
+                </div>
               </div>
             </div>
           </div>
@@ -212,7 +147,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                 </svg>
-                Generate
+                <span>Build</span>
               </button>
             </form>
           </div>
@@ -225,64 +160,68 @@
               <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
               </svg>
-              Generated Files
+              Project Output
             </h2>
-            <button 
-              id="download-btn"
-              class="hidden px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-sm font-medium transition-all flex items-center gap-2"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
-              Download ZIP
-            </button>
-          </div>
-          
-          <!-- Progress Section -->
-          <div id="progress-section" class="hidden px-6 py-4 border-b border-white/10">
-            <div class="flex items-center gap-4">
-              <div class="relative w-16 h-16">
-                <svg class="w-16 h-16" viewBox="0 0 64 64">
-                  <circle class="text-slate-700" stroke-width="4" stroke="currentColor" fill="transparent" r="28" cx="32" cy="32"/>
-                  <circle 
-                    id="progress-ring"
-                    class="progress-ring text-blue-500" 
-                    stroke-width="4" 
-                    stroke="currentColor" 
-                    fill="transparent" 
-                    r="28" 
-                    cx="32" 
-                    cy="32"
-                    stroke-dasharray="175.93"
-                    stroke-dashoffset="175.93"
-                  />
+            <div class="flex items-center gap-2">
+              <span id="file-count" class="text-xs text-slate-400">0 files</span>
+              <button id="download-btn" class="hidden px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 text-sm font-medium transition-all flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                 </svg>
-                <span id="progress-percent" class="absolute inset-0 flex items-center justify-center text-sm font-bold">0%</span>
-              </div>
+                Download
+              </button>
+            </div>
+          </div>
+
+          <!-- Progress Section -->
+          <div id="progress-section" class="hidden px-6 py-4 border-b border-white/10 bg-slate-900/30">
+            <div class="flex items-center gap-4 mb-3">
+              <div id="current-agent-avatar" class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl animate-pulse-slow">🚀</div>
               <div class="flex-1">
-                <p id="progress-phase" class="font-semibold text-blue-400">Initializing...</p>
-                <p id="progress-message" class="text-sm text-slate-400">Preparing to generate your app</p>
+                <p id="progress-agent" class="font-semibold text-blue-400">Initializing...</p>
+                <p id="progress-message" class="text-sm text-slate-400">Preparing agents</p>
+              </div>
+              <span id="progress-percent" class="text-2xl font-bold text-blue-400">0%</span>
+            </div>
+            <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- QA Report Section -->
+          <div id="qa-section" class="hidden px-6 py-4 border-b border-white/10 bg-slate-900/30">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-slate-300">Quality Score</span>
+              <span id="qa-score" class="text-lg font-bold text-green-400">--</span>
+            </div>
+            <div class="grid grid-cols-3 gap-4 text-center text-xs">
+              <div>
+                <div id="qa-requirements" class="text-lg font-semibold text-blue-400">--%</div>
+                <div class="text-slate-500">Requirements</div>
+              </div>
+              <div>
+                <div id="qa-components" class="text-lg font-semibold text-purple-400">--%</div>
+                <div class="text-slate-500">Components</div>
+              </div>
+              <div>
+                <div id="qa-accessibility" class="text-lg font-semibold text-pink-400">--%</div>
+                <div class="text-slate-500">Accessibility</div>
               </div>
             </div>
           </div>
 
           <!-- Files Container -->
-          <div id="files-container" class="flex-1 overflow-y-auto p-6" style="max-height: 500px;">
+          <div id="files-container" class="flex-1 overflow-y-auto p-6" style="max-height: 350px;">
             <div id="empty-state" class="h-full flex flex-col items-center justify-center text-center py-12">
               <div class="w-20 h-20 rounded-2xl bg-slate-800/50 flex items-center justify-center mb-4">
                 <svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                 </svg>
               </div>
-              <h3 class="text-lg font-semibold text-slate-300 mb-2">No files yet</h3>
-              <p class="text-slate-500 text-sm max-w-xs">
-                Describe your app idea and click Generate to create a complete Next.js 15 application
-              </p>
+              <h3 class="text-lg font-semibold text-slate-300 mb-2">Ready to Build</h3>
+              <p class="text-slate-500 text-sm max-w-xs">Describe your app and our AI team will collaborate to build it</p>
             </div>
-            
-            <div id="files-tree" class="hidden space-y-1">
-              <!-- Files will be rendered here -->
-            </div>
+            <div id="files-tree" class="hidden space-y-1"></div>
           </div>
 
           <!-- File Preview -->
@@ -295,7 +234,7 @@
                 </svg>
               </button>
             </div>
-            <pre id="preview-content" class="code-block p-4 text-sm text-slate-300 overflow-auto max-h-64 bg-slate-900/50"></pre>
+            <pre id="preview-content" class="code-block p-4 text-sm text-slate-300 overflow-auto max-h-48 bg-slate-900/50"></pre>
           </div>
         </div>
       </div>
@@ -305,14 +244,14 @@
     <footer class="glass-dark mt-auto">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <p class="text-center text-slate-500 text-sm">
-          Powered by Next.js 15 • React 19 • Tailwind CSS
+          Agent Battalion v2.0 • MGX-Style Multi-Agent System • Next.js 15 + React 19
         </p>
       </div>
     </footer>
   </div>
 
   <script>
-    // Initialize Socket.IO connection
+    // Initialize Socket.IO
     const socket = io();
     
     // DOM Elements
@@ -321,10 +260,11 @@
     const promptInput = document.getElementById('prompt-input');
     const generateBtn = document.getElementById('generate-btn');
     const progressSection = document.getElementById('progress-section');
-    const progressRing = document.getElementById('progress-ring');
+    const progressBar = document.getElementById('progress-bar');
     const progressPercent = document.getElementById('progress-percent');
-    const progressPhase = document.getElementById('progress-phase');
+    const progressAgent = document.getElementById('progress-agent');
     const progressMessage = document.getElementById('progress-message');
+    const currentAgentAvatar = document.getElementById('current-agent-avatar');
     const filesContainer = document.getElementById('files-container');
     const emptyState = document.getElementById('empty-state');
     const filesTree = document.getElementById('files-tree');
@@ -333,45 +273,96 @@
     const previewFilename = document.getElementById('preview-filename');
     const previewContent = document.getElementById('preview-content');
     const closePreview = document.getElementById('close-preview');
-    const statusIndicator = document.getElementById('status-indicator');
+    const qaSection = document.getElementById('qa-section');
+    const agentCards = document.getElementById('agent-cards');
+    const messageCount = document.getElementById('message-count');
+    const fileCount = document.getElementById('file-count');
     
-    // Store for generated files
+    // State
     let generatedFiles = [];
     let currentDownloadUrl = null;
+    let currentProjectId = null;
+    let messages = 1;
     
-    // Update progress ring
-    function updateProgress(percent) {
-      const circumference = 2 * Math.PI * 28;
-      const offset = circumference - (percent / 100) * circumference;
-      progressRing.style.strokeDashoffset = offset;
-      progressPercent.textContent = `${Math.round(percent)}%`;
+    // Agent info
+    const agents = [
+      { id: 'pm-agent', name: 'Alex', role: 'Product Manager', avatar: '👔', color: 'blue' },
+      { id: 'architect-agent', name: 'Sam', role: 'Architect', avatar: '🏗️', color: 'indigo' },
+      { id: 'designer-agent', name: 'Maya', role: 'Designer', avatar: '🎨', color: 'pink' },
+      { id: 'frontend-engineer-agent', name: 'Jordan', role: 'Engineer', avatar: '💻', color: 'green' },
+      { id: 'qa-engineer-agent', name: 'Riley', role: 'QA', avatar: '🔍', color: 'yellow' },
+    ];
+    
+    // Initialize agent cards
+    function initAgentCards() {
+      agentCards.innerHTML = agents.map(agent => `
+        <div id="card-${agent.id}" class="agent-card flex-shrink-0 w-32 p-3 rounded-xl glass border border-transparent transition-all duration-300">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-2xl">${agent.avatar}</span>
+            <span class="status-dot w-2 h-2 rounded-full bg-slate-500"></span>
+          </div>
+          <div class="text-sm font-medium text-white">${agent.name}</div>
+          <div class="text-xs text-slate-400">${agent.role}</div>
+        </div>
+      `).join('');
+    }
+    
+    // Update agent card status
+    function updateAgentCard(agentRole, isActive) {
+      // Reset all cards
+      document.querySelectorAll('.agent-card').forEach(card => {
+        card.classList.remove('active');
+        card.querySelector('.status-dot').classList.remove('bg-green-400');
+        card.querySelector('.status-dot').classList.add('bg-slate-500');
+      });
+      
+      // Find and activate the current agent's card
+      const roleMap = {
+        'product_manager': 'pm-agent',
+        'architect': 'architect-agent',
+        'designer': 'designer-agent',
+        'frontend_engineer': 'frontend-engineer-agent',
+        'qa_engineer': 'qa-engineer-agent',
+      };
+      
+      const agentId = roleMap[agentRole];
+      if (agentId && isActive) {
+        const card = document.getElementById(`card-${agentId}`);
+        if (card) {
+          card.classList.add('active');
+          card.querySelector('.status-dot').classList.remove('bg-slate-500');
+          card.querySelector('.status-dot').classList.add('bg-green-400');
+        }
+      }
     }
     
     // Add message to chat
-    function addMessage(content, isUser = false) {
+    function addMessage(avatar, name, content, type = 'agent') {
+      messages++;
+      messageCount.textContent = `${messages} messages`;
+      
+      const colorMap = {
+        'Alex': 'blue', 'Sam': 'indigo', 'Maya': 'pink',
+        'Jordan': 'green', 'Riley': 'yellow', 'System': 'purple', 'You': 'emerald'
+      };
+      const color = colorMap[name] || 'blue';
+      
+      const isUser = type === 'user';
       const messageDiv = document.createElement('div');
-      messageDiv.className = `flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
-      
-      const avatarClass = isUser 
-        ? 'bg-gradient-to-br from-green-500 to-emerald-600'
-        : 'bg-gradient-to-br from-blue-500 to-purple-600';
-      
-      const bubbleClass = isUser
-        ? 'bg-blue-600/30 rounded-tr-none'
-        : 'glass-dark rounded-tl-none';
-      
-      const icon = isUser
-        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>'
-        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>';
+      messageDiv.className = `flex gap-3 animate-slide-in ${isUser ? 'flex-row-reverse' : ''}`;
       
       messageDiv.innerHTML = `
-        <div class="w-8 h-8 rounded-lg ${avatarClass} flex-shrink-0 flex items-center justify-center">
-          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            ${icon}
-          </svg>
+        <div class="w-10 h-10 rounded-xl ${isUser ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : `bg-gradient-to-br from-${color}-500 to-${color}-600`} flex-shrink-0 flex items-center justify-center text-lg">
+          ${avatar}
         </div>
-        <div class="${bubbleClass} rounded-xl px-4 py-3 max-w-[85%]">
-          <p class="text-slate-200">${content}</p>
+        <div class="flex-1 ${isUser ? 'text-right' : ''}">
+          <div class="flex items-center gap-2 mb-1 ${isUser ? 'justify-end' : ''}">
+            <span class="font-medium text-${color}-400">${name}</span>
+            <span class="text-xs text-slate-500">${new Date().toLocaleTimeString()}</span>
+          </div>
+          <div class="${isUser ? 'bg-blue-600/30 rounded-tr-none ml-auto' : 'glass-dark rounded-tl-none'} rounded-xl px-4 py-3 max-w-md ${isUser ? 'inline-block' : ''}">
+            <p class="text-slate-200">${content}</p>
+          </div>
         </div>
       `;
       
@@ -379,50 +370,22 @@
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
     
-    // Add typing indicator
-    function addTypingIndicator() {
-      const id = 'typing-indicator';
-      if (document.getElementById(id)) return;
+    // Update progress
+    function updateProgress(data) {
+      progressSection.classList.remove('hidden');
+      progressBar.style.width = `${data.progress}%`;
+      progressPercent.textContent = `${data.progress}%`;
+      progressAgent.textContent = data.agent.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+      progressMessage.textContent = data.message;
+      currentAgentAvatar.textContent = data.agentAvatar;
       
-      const div = document.createElement('div');
-      div.id = id;
-      div.className = 'flex gap-3';
-      div.innerHTML = `
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0 flex items-center justify-center">
-          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
-        </div>
-        <div class="glass-dark rounded-xl rounded-tl-none px-4 py-3 flex items-center gap-1">
-          <span class="typing-dot w-2 h-2 rounded-full bg-blue-400"></span>
-          <span class="typing-dot w-2 h-2 rounded-full bg-blue-400"></span>
-          <span class="typing-dot w-2 h-2 rounded-full bg-blue-400"></span>
-        </div>
-      `;
-      messagesContainer.appendChild(div);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      updateAgentCard(data.agent, true);
     }
     
-    // Remove typing indicator
-    function removeTypingIndicator() {
-      const indicator = document.getElementById('typing-indicator');
-      if (indicator) indicator.remove();
-    }
-    
-    // Get file icon based on extension
+    // Get file icon
     function getFileIcon(filename) {
       const ext = filename.split('.').pop().toLowerCase();
-      const icons = {
-        ts: '🟦',
-        tsx: '⚛️',
-        js: '🟨',
-        jsx: '⚛️',
-        json: '📋',
-        css: '🎨',
-        html: '🌐',
-        md: '📝',
-        mjs: '🟨',
-      };
+      const icons = { ts: '🟦', tsx: '⚛️', js: '🟨', jsx: '⚛️', json: '📋', css: '🎨', html: '🌐', md: '📝', mjs: '🟨' };
       return icons[ext] || '📄';
     }
     
@@ -431,8 +394,8 @@
       emptyState.classList.add('hidden');
       filesTree.classList.remove('hidden');
       filesTree.innerHTML = '';
+      fileCount.textContent = `${files.length} files`;
       
-      // Group files by directory
       const tree = {};
       files.forEach((file, index) => {
         const parts = file.path.split('/');
@@ -440,7 +403,7 @@
         parts.forEach((part, i) => {
           if (i === parts.length - 1) {
             if (!current._files) current._files = [];
-            current._files.push({ name: part, fullPath: file.path, index });
+            current._files.push({ name: part, fullPath: file.path, index, size: file.size });
           } else {
             if (!current[part]) current[part] = {};
             current = current[part];
@@ -448,9 +411,7 @@
         });
       });
       
-      // Render tree recursively
       function renderNode(node, container, depth = 0) {
-        // Render directories first
         Object.keys(node).filter(k => k !== '_files').sort().forEach(dirName => {
           const dirDiv = document.createElement('div');
           dirDiv.className = 'space-y-1';
@@ -471,17 +432,21 @@
           renderNode(node[dirName], childContainer, depth + 1);
         });
         
-        // Render files
         if (node._files) {
           node._files.sort((a, b) => a.name.localeCompare(b.name)).forEach(file => {
             const fileDiv = document.createElement('div');
-            fileDiv.className = 'flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors';
+            fileDiv.className = 'flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group';
             fileDiv.style.paddingLeft = `${depth * 16 + 8}px`;
             fileDiv.innerHTML = `
               <span>${getFileIcon(file.name)}</span>
-              <span class="text-slate-300 text-sm">${file.name}</span>
+              <span class="text-slate-300 text-sm flex-1">${file.name}</span>
+              <span class="text-slate-500 text-xs opacity-0 group-hover:opacity-100 transition-opacity">${(file.size / 1024).toFixed(1)}KB</span>
             `;
-            fileDiv.onclick = () => showFilePreview(file.fullPath, generatedFiles[file.index].content);
+            fileDiv.onclick = () => {
+              if (currentProjectId) {
+                socket.emit('file:content', { projectId: currentProjectId, path: file.fullPath });
+              }
+            };
             container.appendChild(fileDiv);
           });
         }
@@ -497,126 +462,92 @@
       filePreview.classList.remove('hidden');
     }
     
-    // Hide file preview
-    closePreview.onclick = () => {
-      filePreview.classList.add('hidden');
-    };
+    closePreview.onclick = () => filePreview.classList.add('hidden');
     
-    // Update status indicator
-    function updateStatus(status, color = 'green') {
-      const colors = {
-        green: 'bg-green-400',
-        yellow: 'bg-yellow-400',
-        blue: 'bg-blue-400',
-        red: 'bg-red-400',
-      };
-      statusIndicator.innerHTML = `
-        <span class="w-2 h-2 rounded-full ${colors[color]} animate-pulse"></span>
-        <span class="text-slate-300">${status}</span>
-      `;
-    }
-    
-    // Handle form submission
+    // Form submission
     chatForm.onsubmit = async (e) => {
       e.preventDefault();
       
       const prompt = promptInput.value.trim();
       if (!prompt) return;
       
-      // Add user message
-      addMessage(prompt, true);
+      addMessage('👤', 'You', prompt, 'user');
       promptInput.value = '';
-      
-      // Disable input
       promptInput.disabled = true;
       generateBtn.disabled = true;
       
-      // Show typing indicator
-      addTypingIndicator();
-      
-      // Show progress section
-      progressSection.classList.remove('hidden');
-      updateProgress(0);
-      updateStatus('Generating', 'blue');
-      
-      // Reset file tree
       filesTree.classList.add('hidden');
       emptyState.classList.remove('hidden');
       downloadBtn.classList.add('hidden');
       filePreview.classList.add('hidden');
+      qaSection.classList.add('hidden');
       generatedFiles = [];
       
-      // Start generation
-      socket.emit('generate:start', { 
-        prompt,
-        projectName: prompt.split(' ').slice(0, 3).join('-')
-      });
+      socket.emit('generate:start', { prompt, projectName: prompt.split(' ').slice(0, 3).join('-') });
     };
     
-    // Socket event handlers
+    // Socket events
     socket.on('connect', () => {
       console.log('Connected to server');
-      updateStatus('Ready', 'green');
-    });
-    
-    socket.on('disconnect', () => {
-      console.log('Disconnected from server');
-      updateStatus('Disconnected', 'red');
+      initAgentCards();
     });
     
     socket.on('generation:progress', (data) => {
-      const { phase, message, progress, files } = data;
+      updateProgress(data);
       
-      updateProgress(progress);
-      progressPhase.textContent = phase.charAt(0).toUpperCase() + phase.slice(1);
-      progressMessage.textContent = message;
-      
-      if (files) {
-        generatedFiles = files;
-        renderFileTree(files);
+      if (data.progress > 0 && data.progress < 100 && data.agent !== 'system') {
+        // Add agent message for significant progress
+        const agent = agents.find(a => a.id.startsWith(data.agent.replace('_', '-')));
+        if (agent && data.message && !data.message.includes('...')) {
+          addMessage(data.agentAvatar, agent?.name || 'Agent', data.message);
+        }
       }
     });
     
     socket.on('generation:complete', (data) => {
-      const { projectId, downloadUrl, files } = data;
+      currentProjectId = data.projectId;
+      currentDownloadUrl = data.downloadUrl;
+      generatedFiles = data.files;
       
-      removeTypingIndicator();
-      
-      // Add completion message
-      addMessage(`✅ Your app has been generated successfully! I created ${files.length} files for you. Click "Download ZIP" to get your complete Next.js 15 application.`);
-      
-      // Update UI
-      currentDownloadUrl = downloadUrl;
-      downloadBtn.classList.remove('hidden');
       progressSection.classList.add('hidden');
+      updateAgentCard(null, false);
       
-      // Enable input
+      renderFileTree(data.files);
+      downloadBtn.classList.remove('hidden');
+      
+      // Show QA report
+      if (data.qaReport) {
+        qaSection.classList.remove('hidden');
+        document.getElementById('qa-score').textContent = `${data.qaReport.score}/100`;
+        document.getElementById('qa-requirements').textContent = `${data.qaReport.coverage.requirements}%`;
+        document.getElementById('qa-components').textContent = `${data.qaReport.coverage.components}%`;
+        document.getElementById('qa-accessibility').textContent = `${data.qaReport.coverage.accessibility}%`;
+      }
+      
+      addMessage('✅', 'System', `Project complete! Generated ${data.files.length} files in ${(data.duration / 1000).toFixed(1)}s. QA Score: ${data.qaReport?.score || 'N/A'}/100`);
+      
       promptInput.disabled = false;
       generateBtn.disabled = false;
-      
-      updateStatus('Ready', 'green');
     });
     
     socket.on('generation:error', (data) => {
-      removeTypingIndicator();
-      addMessage(`❌ Error: ${data.message}`);
-      
+      addMessage('❌', 'System', `Error: ${data.message}`);
       progressSection.classList.add('hidden');
+      updateAgentCard(null, false);
       promptInput.disabled = false;
       generateBtn.disabled = false;
-      
-      updateStatus('Error', 'red');
-      setTimeout(() => updateStatus('Ready', 'green'), 3000);
     });
     
-    // Download button handler
+    socket.on('file:content', (data) => {
+      showFilePreview(data.path, data.content);
+    });
+    
     downloadBtn.onclick = () => {
       if (currentDownloadUrl) {
         window.location.href = currentDownloadUrl;
       }
     };
     
-    // Focus input on load
     promptInput.focus();
   </script>
 </body>
