@@ -266,32 +266,41 @@ export class LLMService extends EventEmitter {
     const decoder = new TextDecoder();
     let buffer = '';
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') {
-            yield { content: '', done: true };
-            return;
-          }
-          try {
-            const parsed = JSON.parse(data);
-            const content = parsed.choices[0]?.delta?.content || '';
-            if (content) {
-              yield { content, done: false };
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+              yield { content: '', done: true };
+              return;
             }
-          } catch {
-            // Skip invalid JSON
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices[0]?.delta?.content || '';
+              if (content) {
+                yield { content, done: false };
+              }
+            } catch {
+              // Skip invalid JSON
+            }
           }
         }
       }
+      // If stream ended without [DONE] marker, signal completion
+      yield { content: '', done: true };
+    } finally {
+      // Ensure reader is properly released
+      reader.releaseLock();
     }
   }
 
@@ -382,29 +391,38 @@ export class LLMService extends EventEmitter {
     const decoder = new TextDecoder();
     let buffer = '';
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          try {
-            const data = JSON.parse(line.slice(6));
-            if (data.type === 'content_block_delta') {
-              yield { content: data.delta.text, done: false };
-            } else if (data.type === 'message_stop') {
-              yield { content: '', done: true };
-              return;
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.type === 'content_block_delta') {
+                yield { content: data.delta.text, done: false };
+              } else if (data.type === 'message_stop') {
+                yield { content: '', done: true };
+                return;
+              }
+            } catch {
+              // Skip invalid JSON
             }
-          } catch {
-            // Skip invalid JSON
           }
         }
       }
+      // If stream ended without message_stop event, signal completion
+      yield { content: '', done: true };
+    } finally {
+      // Ensure reader is properly released
+      reader.releaseLock();
     }
   }
 
