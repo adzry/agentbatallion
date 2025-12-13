@@ -270,7 +270,6 @@ export class LLMService extends EventEmitter {
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
-          yield { content: '', done: true };
           break;
         }
 
@@ -297,6 +296,8 @@ export class LLMService extends EventEmitter {
           }
         }
       }
+      // If stream ended without [DONE] marker, signal completion
+      yield { content: '', done: true };
     } finally {
       // Ensure reader is properly released
       reader.releaseLock();
@@ -394,7 +395,6 @@ export class LLMService extends EventEmitter {
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
-          yield { content: '', done: true };
           break;
         }
 
@@ -418,6 +418,8 @@ export class LLMService extends EventEmitter {
           }
         }
       }
+      // If stream ended without message_stop event, signal completion
+      yield { content: '', done: true };
     } finally {
       // Ensure reader is properly released
       reader.releaseLock();
