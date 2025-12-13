@@ -23,6 +23,7 @@ import { MemoryManager } from '../memory/memory-manager.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import { MessageBus } from '../communication/message-bus.js';
 import { LLMService, createLLMService, Message as LLMMessage } from '../llm/llm-service.js';
+import { VectorMemory } from '../memory/vector-memory.js';
 
 export abstract class BaseTeamAgent extends EventEmitter {
   protected profile: AgentProfile;
@@ -33,6 +34,7 @@ export abstract class BaseTeamAgent extends EventEmitter {
   protected projectContext: ProjectContext | null = null;
   protected llm: LLMService;
   protected useRealAI: boolean;
+  protected globalKnowledge: VectorMemory; // Phase 6: Overmind
 
   constructor(
     profile: AgentProfile,
@@ -50,6 +52,12 @@ export abstract class BaseTeamAgent extends EventEmitter {
     this.llm = createLLMService();
     this.useRealAI = process.env.USE_REAL_AI === 'true';
     
+    // Initialize global knowledge (Phase 6: Overmind)
+    this.globalKnowledge = new VectorMemory();
+    this.globalKnowledge.initialize().catch(err => {
+      console.warn('Global knowledge initialization failed:', err);
+    });
+    
     this.state = {
       agentId: profile.id,
       status: 'idle',
@@ -61,6 +69,46 @@ export abstract class BaseTeamAgent extends EventEmitter {
 
     // Subscribe to messages directed to this agent
     this.messageBus.subscribe(this.profile.id, this.handleMessage.bind(this));
+  }
+
+  /**
+   * Query global knowledge base for learned patterns (Phase 6: Overmind)
+   */
+  protected async queryCollectiveWisdom(problem: string): Promise<string[]> {
+    try {
+      const solutions = await this.globalKnowledge.findSimilarSolutions(problem);
+      if (solutions.length > 0) {
+        this.think(`Found ${solutions.length} similar solutions in collective wisdom`);
+      }
+      return solutions;
+    } catch (error) {
+      this.think(`Could not query collective wisdom: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return [];
+    }
+  }
+
+  /**
+   * Enhance prompt with collective wisdom (Phase 6: Overmind)
+   */
+  protected async enhancePromptWithWisdom(
+    basePrompt: string,
+    context: string = ''
+  ): Promise<string> {
+    const wisdom = await this.queryCollectiveWisdom(context || basePrompt);
+    
+    if (wisdom.length === 0) {
+      return basePrompt;
+    }
+
+    const wisdomSection = `
+
+COLLECTIVE WISDOM (learned from previous missions):
+${wisdom.map((w, i) => `${i + 1}. ${w}`).join('\n')}
+
+Apply these learnings to avoid common pitfalls.
+`;
+
+    return basePrompt + wisdomSection;
   }
 
   /**

@@ -192,6 +192,50 @@ export class VectorMemory extends EventEmitter {
   }
 
   /**
+   * Store a solution pattern in the global knowledge base (Phase 6: Overmind)
+   * This is shared across all missions for collective learning
+   */
+  async storeSolutionPattern(
+    problem: string,
+    solution: string,
+    tags: string[] = []
+  ): Promise<VectorDocument> {
+    const content = `PROBLEM: ${problem}\n\nSOLUTION: ${solution}`;
+    
+    return await this.store(content, {
+      type: 'solution_pattern',
+      tags: ['global', 'collective_wisdom', ...tags],
+      // No projectId - this is global
+    });
+  }
+
+  /**
+   * Find similar solution patterns from the global knowledge base (Phase 6: Overmind)
+   */
+  async findSimilarSolutions(problem: string, topK: number = 5): Promise<string[]> {
+    const result = await this.search(problem, {
+      topK: topK * 2, // Fetch more to filter
+      filter: { type: 'solution_pattern' },
+      minScore: 0.6, // Higher threshold for solutions
+    });
+
+    // Filter for global patterns and extract solutions
+    const solutions = result.documents
+      .filter(doc => 
+        doc.metadata.tags?.includes('global') || 
+        doc.metadata.tags?.includes('collective_wisdom')
+      )
+      .slice(0, topK)
+      .map(doc => {
+        // Extract solution part from content
+        const solutionMatch = doc.content.match(/SOLUTION:\s*([\s\S]*)/);
+        return solutionMatch ? solutionMatch[1].trim() : doc.content;
+      });
+
+    return solutions;
+  }
+
+  /**
    * Search for similar documents
    */
   async search(

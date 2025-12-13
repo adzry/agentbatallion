@@ -172,3 +172,7 @@ export type { RepairInput, RepairResult } from './repair.js';
 // Export Security Audit activity (Phase 5: Red Sparrow)
 export { performSecurityAudit } from './security-audit.js';
 export type { SecurityAuditInput, SecurityAuditResult } from './security-audit.js';
+
+// Export Knowledge Harvest activity (Phase 6: Overmind)
+export { harvestKnowledge } from './knowledge-harvest.js';
+export type { KnowledgeHarvestInput, KnowledgeHarvestResult } from './knowledge-harvest.js';
