@@ -97,4 +97,12 @@ export {
 } from '../feedback/human-feedback.js';
 
 // Code Cleanup Utility
-export { cleanupCode, cleanupTSX, cleanupCSS, cleanupJSON } from '../utils/code-cleanup.js';
+export { 
+  cleanupCode, 
+  cleanupTSX, 
+  cleanupTS,
+  cleanupCSS, 
+  cleanupJSON,
+  type CleanupResult,
+  type CleanupOptions,
+} from '../utils/code-cleanup.js';
