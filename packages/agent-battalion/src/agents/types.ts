@@ -13,7 +13,6 @@ export type AgentRole =
   | 'designer'
   | 'qa_engineer'
   | 'devops_engineer'
-  | 'security_agent'
   | 'tech_lead';
 
 // Agent Status

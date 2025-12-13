@@ -83,7 +83,7 @@ export class TeamOrchestrator extends EventEmitter {
         'frontend_engineer',
         'backend_engineer',
         'qa_engineer',
-        'security_agent',
+        'devops_engineer',
       ],
       workflowType: config?.workflowType || 'agile',
       maxIterations: config?.maxIterations || 3,
@@ -132,8 +132,8 @@ export class TeamOrchestrator extends EventEmitter {
       this.agents.set('qa_engineer', new QAEngineerAgent(this.memory, this.tools, this.messageBus));
     }
 
-    if (enabledRoles.includes('security_agent')) {
-      this.agents.set('security_agent', new SecurityAgent(this.memory, this.tools, this.messageBus));
+    if (enabledRoles.includes('devops_engineer')) {
+      this.agents.set('devops_engineer', new SecurityAgent(this.memory, this.tools, this.messageBus));
     }
   }
 
@@ -287,9 +287,9 @@ export class TeamOrchestrator extends EventEmitter {
 
       // Phase 4.7: Security Agent - Security Review (REAL GATE)
       let securityReport;
-      if (this.agents.has('security_agent')) {
-        this.emitProgress('security', 'security_agent', '🔐', 'Running security review...', 72);
-        const securityAgent = this.agents.get('security_agent') as SecurityAgent;
+      if (this.agents.has('devops_engineer')) {
+        this.emitProgress('security', 'devops_engineer', '🔐', 'Running security audit...', 77);
+        const securityAgent = this.agents.get('devops_engineer') as SecurityAgent;
         securityReport = await securityAgent.auditSecurity(files);
 
         await this.memory.store('security_report', 'current', securityReport);
@@ -299,22 +299,27 @@ export class TeamOrchestrator extends EventEmitter {
           this.projectContext.securityReport = securityReport;
         }
 
-        // REAL SECURITY GATE: Fail on critical or high severity issues
-        const criticalIssues = securityReport.issues.filter(
-          (issue: any) => issue.severity === 'critical' || issue.severity === 'high'
-        );
+        this.emitProgress('security', 'devops_engineer', '🔐', `Security score ${securityReport.score}/100 (${securityReport.grade})`, 79);
 
-        if (criticalIssues.length > 0) {
-          const errorMsg = `Security gate failed: ${criticalIssues.length} critical/high severity issue(s) found`;
-          this.emitProgress('error', 'security_agent', '🔐', errorMsg, 0);
+        // REAL SECURITY GATE: Fail if critical > 0 OR grade in (D, F) OR score < 70
+        const failsGate = 
+          securityReport.summary.critical > 0 ||
+          securityReport.grade === 'D' ||
+          securityReport.grade === 'F' ||
+          securityReport.score < 70;
+
+        if (failsGate) {
+          const errorMsg = `Security gate failed: Score ${securityReport.score}/100 (${securityReport.grade}), ${securityReport.summary.critical} critical issue(s)`;
+          this.emitProgress('error', 'devops_engineer', '🔐', errorMsg, 0);
           
           throw new Error(
             `${errorMsg}\n` +
-            criticalIssues.map((issue: any) => `  - ${issue.title}: ${issue.description}`).join('\n')
+            securityReport.issues
+              .filter((issue: any) => issue.severity === 'critical' || issue.severity === 'high')
+              .map((issue: any) => `  - ${issue.title}: ${issue.description}`)
+              .join('\n')
           );
         }
-
-        this.emitProgress('security', 'security_agent', '🔐', `Security review passed (${securityReport.score}/100)`, 75);
       }
 
       // Phase 5: QA Engineer - Review & Test (REAL GATE)
