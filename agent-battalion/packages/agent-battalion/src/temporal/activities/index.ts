@@ -152,3 +152,7 @@ export async function startPreview(
   // Implementation would use E2B sandbox
   return `https://${sandboxId}.sandbox.e2b.dev:${port}`;
 }
+
+// Export UI Preview activity (Phase 1: Nano Banana)
+export { generateUiPreview } from './ui-preview.js';
+export type { UIPreviewInput, UIPreviewResult } from './ui-preview.js';
