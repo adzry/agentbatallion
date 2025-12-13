@@ -121,6 +121,7 @@ export interface AgentTask {
   status: 'pending' | 'in_progress' | 'review' | 'complete' | 'blocked';
   dependencies?: string[];
   artifacts?: string[];
+  parameters?: Record<string, any>; // For passing additional data to agents
   createdAt: Date;
   updatedAt: Date;
   completedAt?: Date;

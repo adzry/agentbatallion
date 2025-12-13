@@ -85,6 +85,12 @@ Your responsibilities:
 5. Ensure secure coding practices
 6. Generate security recommendations
 
+PHASE 5 - RED TEAM MODE:
+7. Generate attack vectors to test security
+8. Create exploit payloads (ethical hacking)
+9. Test authentication bypass attempts
+10. Verify input validation
+
 Focus on:
 - OWASP Top 10 vulnerabilities
 - Input validation and sanitization
@@ -95,6 +101,100 @@ Focus on:
     };
 
     super(profile, memory, tools, messageBus);
+  }
+
+  /**
+   * Generate attack vectors for testing (Phase 5: Red Sparrow)
+   */
+  async generateAttackVectors(appDescription: string): Promise<Array<{
+    name: string;
+    type: SecurityCategory;
+    payload: string;
+    target: string;
+    description: string;
+  }>> {
+    this.think('Generating attack vectors for penetration testing...');
+
+    if (!this.isRealAIEnabled()) {
+      // Return default attack vectors
+      return this.getDefaultAttackVectors();
+    }
+
+    try {
+      const prompt = `You are a White Hat Penetration Tester. Generate 3 specific attack vectors to test this application:
+
+APPLICATION:
+${appDescription}
+
+Generate realistic attack payloads to test:
+1. XSS (Cross-Site Scripting)
+2. SQL Injection (if applicable)
+3. CSRF or other relevant attack
+
+Return JSON array:
+[
+  {
+    "name": "XSS in comment field",
+    "type": "xss",
+    "payload": "<script>alert('XSS')</script>",
+    "target": "//textarea[@name='comment']",
+    "description": "Tests XSS vulnerability in user input"
+  }
+]
+
+Make the payloads practical and testable. Include the xpath selector for the target element.`;
+
+      interface AttackVector {
+        name: string;
+        type: SecurityCategory;
+        payload: string;
+        target: string;
+        description: string;
+      }
+
+      const response = await this.promptLLM<AttackVector[]>(prompt, { expectJson: true });
+      
+      this.think(`Generated ${response.length} attack vectors`);
+      return response;
+    } catch (error) {
+      this.think(`Attack vector generation failed: ${error instanceof Error ? error.message : 'Unknown'}`);
+      return this.getDefaultAttackVectors();
+    }
+  }
+
+  /**
+   * Get default attack vectors for testing
+   */
+  private getDefaultAttackVectors(): Array<{
+    name: string;
+    type: SecurityCategory;
+    payload: string;
+    target: string;
+    description: string;
+  }> {
+    return [
+      {
+        name: 'XSS Test - Script Tag',
+        type: 'xss',
+        payload: '<script>alert("XSS")</script>',
+        target: '//input[@type="text"]',
+        description: 'Tests for XSS vulnerability in text inputs',
+      },
+      {
+        name: 'XSS Test - Image Tag',
+        type: 'xss',
+        payload: '<img src=x onerror=alert("XSS")>',
+        target: '//input[@type="text"]',
+        description: 'Tests for XSS via image tag',
+      },
+      {
+        name: 'SQL Injection Test',
+        type: 'injection',
+        payload: "' OR '1'='1",
+        target: '//input[@type="text"]',
+        description: 'Tests for SQL injection in inputs',
+      },
+    ];
   }
 
   /**

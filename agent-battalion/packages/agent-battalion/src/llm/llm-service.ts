@@ -25,6 +25,12 @@ export interface LLMConfig {
 export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
+  images?: string[]; // Base64 encoded images (Phase 2: Visual QA)
+}
+
+export interface LLMRequest {
+  messages: Message[];
+  images?: string[]; // Base64 encoded images for vision models
 }
 
 export interface LLMResponse {
@@ -199,6 +205,26 @@ export class LLMService extends EventEmitter {
    * OpenAI Completion
    */
   private async completeOpenAI(messages: Message[]): Promise<LLMResponse> {
+    // Transform messages to support images (Phase 2: Visual QA)
+    const transformedMessages = messages.map(msg => {
+      if (msg.images && msg.images.length > 0) {
+        // GPT-4 Vision format
+        return {
+          role: msg.role,
+          content: [
+            { type: 'text', text: msg.content },
+            ...msg.images.map(img => ({
+              type: 'image_url',
+              image_url: {
+                url: img.startsWith('data:') ? img : `data:image/png;base64,${img}`,
+              },
+            })),
+          ],
+        };
+      }
+      return { role: msg.role, content: msg.content };
+    });
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -207,7 +233,7 @@ export class LLMService extends EventEmitter {
       },
       body: JSON.stringify({
         model: this.config.model,
-        messages,
+        messages: transformedMessages,
         temperature: this.config.temperature,
         max_tokens: this.config.maxTokens,
       }),
@@ -412,10 +438,31 @@ export class LLMService extends EventEmitter {
    * Google AI Completion
    */
   private async completeGoogle(messages: Message[]): Promise<LLMResponse> {
-    const contents = messages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
+    // Transform messages to support images (Phase 2: Visual QA)
+    const contents = messages.map(m => {
+      const parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [
+        { text: m.content }
+      ];
+      
+      // Add images in Gemini format
+      if (m.images && m.images.length > 0) {
+        m.images.forEach(img => {
+          // Remove data URL prefix if present
+          const base64Data = img.replace(/^data:image\/\w+;base64,/, '');
+          parts.push({
+            inlineData: {
+              mimeType: 'image/png',
+              data: base64Data,
+            },
+          });
+        });
+      }
+      
+      return {
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts,
+      };
+    });
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${this.config.model}:generateContent?key=${this.config.apiKey}`,

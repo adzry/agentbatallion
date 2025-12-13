@@ -50,6 +50,7 @@ export interface GenerationWorkflowOutput {
 // Signals
 export const feedbackSignal = defineSignal<[{ approved: boolean; comment?: string; modifications?: string }]>('feedback');
 export const cancelSignal = defineSignal('cancel');
+export const forkMissionSignal = defineSignal<[string]>('forkMission'); // Phase 9: Chronos
 
 /**
  * Main Generation Workflow
@@ -63,6 +64,7 @@ export async function generationWorkflow(input: GenerationWorkflowInput): Promis
   let cancelled = false;
   let awaitingFeedback = false;
   let feedbackResponse: { approved: boolean; comment?: string; modifications?: string } | null = null;
+  let forkRequests: string[] = []; // Phase 9: Chronos
 
   // Set up signal handlers
   setHandler(feedbackSignal, (response) => {
@@ -74,8 +76,27 @@ export async function generationWorkflow(input: GenerationWorkflowInput): Promis
     cancelled = true;
   });
 
+  // Phase 9: Chronos - Fork mission signal handler
+  setHandler(forkMissionSignal, (newRequirement: string) => {
+    forkRequests.push(newRequirement);
+    console.log(`[Chronos] Fork requested: ${newRequirement}`);
+  });
+
   try {
-    // Phase 1: Requirements Analysis
+    // Phase 0: Rapid UI Preview (Nano Banana - runs in parallel)
+    // Start UI preview generation immediately for instant visual feedback
+    acts.generateUiPreview({
+      request: input.userRequest,
+    }).then((previewResult) => {
+      if (previewResult.success) {
+        console.log('[Nano Banana] UI preview generated:', previewResult.preview.slice(0, 100) + '...');
+      }
+    }).catch((error) => {
+      // Don't fail the whole workflow if preview fails
+      console.warn('UI preview failed:', error);
+    });
+
+    // Phase 1: Requirements Analysis (runs in parallel with UI preview)
     const requirementsResult = await acts.analyzeRequirements(
       input.projectId,
       input.userRequest

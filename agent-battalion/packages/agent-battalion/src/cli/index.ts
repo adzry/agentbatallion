@@ -256,5 +256,25 @@ program
     await startServer(parseInt(options.port));
   });
 
+// Phase 8: Neural Link - Local daemon command
+program
+  .command('link')
+  .description('Start local development daemon for direct file access')
+  .option('-p, --port <port>', 'WebSocket port', '3001')
+  .option('--token <token>', 'Authentication token')
+  .action(async (options) => {
+    showBanner();
+    log('🔗 Starting Neural Link daemon...', 'cyan');
+    log(`   WebSocket port: ${options.port}`, 'dim');
+    console.log('');
+    
+    // Import and start the local daemon
+    const { startLocalDaemon } = await import('./local-daemon.js');
+    await startLocalDaemon({
+      port: parseInt(options.port),
+      authToken: options.token || process.env.LOCAL_DAEMON_TOKEN || 'dev-token',
+    });
+  });
+
 // Parse arguments
 program.parse();
