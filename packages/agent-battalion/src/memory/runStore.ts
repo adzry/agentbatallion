@@ -71,8 +71,7 @@ export class RunStore {
   /**
    * Get access level for an agent on an artifact type
    * 
-   * TODO: Integrate with AGENT_CONTRACTS to determine true access levels
-   * For now, returns 'owner' for all types as a placeholder
+   * Integrates with AGENT_CONTRACTS to determine access levels based on ownership
    */
   getAccess(agentId: string, artifactType: ArtifactType): OwnershipLevel {
     const contract = AGENT_CONTRACTS[agentId];

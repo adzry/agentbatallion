@@ -88,9 +88,25 @@ async function runAgentToArtifact(
       testCases: [],
       coverage: {},
     },
+    verification_result: {
+      status: 'pass',
+      checks: [],
+      summary: { total: 0, passed: 0, failed: 0 },
+    },
+    run_manifest: {
+      runId: context.runStore.getRunId(),
+      artifacts: [],
+      createdAt: new Date(),
+      status: 'in-progress',
+    },
   };
 
-  return stubArtifacts[artifactType] || {};
+  if (!stubArtifacts[artifactType]) {
+    console.warn(`[Pipeline] Warning: No stub data defined for artifact type '${artifactType}'`);
+    return { type: artifactType, generated: true };
+  }
+
+  return stubArtifacts[artifactType];
 }
 
 /**
