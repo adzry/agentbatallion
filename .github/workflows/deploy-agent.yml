@@ -11,11 +11,13 @@ on:
         description: '🧠 AI Model'
         required: true
         type: choice
-        default: 'claude-3-5-sonnet-20240620'
+        default: 'claude-sonnet-4-20250514'
         options:
-          - claude-3-5-sonnet-20240620
-          - claude-3-opus
+          - claude-sonnet-4-20250514
+          - claude-opus-4-20250514
           - gpt-4o
+          - gpt-4o-mini
+          - gemini-2.5-flash
       timeout:
         description: '⏱️ Timeout (seconds)'
         required: true
@@ -93,6 +95,7 @@ jobs:
         run: |
           echo "## 🎖️ Agent Battalion Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "**Mission:** ${{ github.event.inputs.mission }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Model:** ${{ github.event.inputs.model }}" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** ${{ steps.deploy.outputs.status }}" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ steps.deploy.outputs.status }}" == "success" ]; then
