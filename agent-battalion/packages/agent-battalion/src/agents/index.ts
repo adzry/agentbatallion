@@ -1,7 +1,7 @@
 /**
- * Agent Battalion - MGX-style Multi-Agent System v2.0
+ * Agent Battalion v3.0 - Multi-Agent System
  * 
- * Export all agents and orchestration components
+ * Production-ready AI-powered full-stack app generator
  */
 
 // Types
@@ -9,7 +9,6 @@ export * from './types.js';
 
 // Base Agents
 export { BaseTeamAgent } from './base-team-agent.js';
-export { AIAgent, type AIAgentConfig } from './ai-agent.js';
 
 // Team Agents
 export { ProductManagerAgent } from './team/product-manager.js';
@@ -96,3 +95,6 @@ export {
   type FeedbackStatus,
   type FeedbackConfig,
 } from '../feedback/human-feedback.js';
+
+// Code Cleanup Utility
+export { cleanupCode, cleanupTSX, cleanupCSS, cleanupJSON } from '../utils/code-cleanup.js';

@@ -1,8 +1,8 @@
 /**
  * Hybrid Mission Workflow
  *
- * Orchestrates the app generation process using Temporal workflows
- * and LangGraph agents for intelligent decision-making.
+ * Orchestrates the app generation process using Temporal workflows.
+ * Uses the TeamOrchestrator for intelligent multi-agent collaboration.
  */
 import type { MissionInput, MissionResult, WorkflowProgress } from '../types.js';
 export declare const getProgress: import("@temporalio/workflow").QueryDefinition<WorkflowProgress, [], string>;

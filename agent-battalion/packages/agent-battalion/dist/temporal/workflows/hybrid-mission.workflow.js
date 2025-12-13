@@ -1,13 +1,13 @@
 /**
  * Hybrid Mission Workflow
  *
- * Orchestrates the app generation process using Temporal workflows
- * and LangGraph agents for intelligent decision-making.
+ * Orchestrates the app generation process using Temporal workflows.
+ * Uses the TeamOrchestrator for intelligent multi-agent collaboration.
  */
 import { proxyActivities, defineQuery, defineSignal, setHandler, } from '@temporalio/workflow';
 // Activity proxies
-const { analyzeRequirements, planArchitecture, generateCode, reviewCode, runTests } = proxyActivities({
-    startToCloseTimeout: '5 minutes',
+const { generateApplication, reviewCode, runTests } = proxyActivities({
+    startToCloseTimeout: '10 minutes',
     retry: {
         maximumAttempts: 3,
     },
@@ -61,43 +61,19 @@ export async function hybridMissionWorkflow(input) {
                 duration: Date.now() - startTime,
             };
         }
-        // Phase 1: Analyze Requirements
-        updateProgress('analyzing', 'requirements', 10, 'Analyzing requirements...');
-        const analysis = await analyzeRequirements({
+        // Phase 1: Generate Application using TeamOrchestrator
+        updateProgress('generating', 'code', 20, 'Generating application with AI agents...');
+        const result = await generateApplication({
             missionId: input.missionId,
             prompt: input.prompt,
-            config: input.config,
-        });
-        if (cancelled) {
-            return {
-                missionId: input.missionId,
-                status: 'cancelled',
-                files: [],
-                duration: Date.now() - startTime,
-            };
-        }
-        // Phase 2: Plan Architecture
-        updateProgress('planning', 'architecture', 25, 'Planning architecture...');
-        const plan = await planArchitecture({
-            missionId: input.missionId,
-            analysis,
-            config: input.config,
-        });
-        if (cancelled) {
-            return {
-                missionId: input.missionId,
-                status: 'cancelled',
-                files: [],
-                duration: Date.now() - startTime,
-            };
-        }
-        // Phase 3: Generate Code
-        updateProgress('generating', 'code', 50, 'Generating code...');
-        files = await generateCode({
-            missionId: input.missionId,
-            plan,
             projectName: input.projectName,
+            config: input.config,
         });
+        if (!result.success) {
+            throw new Error(result.error || 'Generation failed');
+        }
+        files = result.files;
+        updateProgress('generating', 'code', 60, `Generated ${files.length} files`);
         if (cancelled) {
             return {
                 missionId: input.missionId,
@@ -106,7 +82,7 @@ export async function hybridMissionWorkflow(input) {
                 duration: Date.now() - startTime,
             };
         }
-        // Phase 4: Code Review
+        // Phase 2: Additional Code Review
         updateProgress('reviewing', 'code', 75, 'Reviewing generated code...');
         const reviewResult = await reviewCode({
             missionId: input.missionId,
@@ -125,7 +101,7 @@ export async function hybridMissionWorkflow(input) {
                 duration: Date.now() - startTime,
             };
         }
-        // Phase 5: Run Tests (if enabled)
+        // Phase 3: Run Tests (if enabled)
         if (input.config?.testing) {
             updateProgress('testing', 'code', 90, 'Running tests...');
             await runTests({

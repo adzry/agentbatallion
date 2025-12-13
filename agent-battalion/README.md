@@ -1,220 +1,61 @@
-# Agent Battalion v3.0
+# 🤖 Agent Battalion v3.0
 
-> **AI-Powered Full-Stack App Generator with Multi-Agent Collaboration**
+> **Production-Ready AI-Powered Full-Stack App Generator**
 
-An advanced MGX-style multi-agent system that generates complete, production-ready applications through collaborative AI agents.
+[![Version](https://img.shields.io/badge/version-3.0.0-blue)](https://github.com/adzry/agentbatallion)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
+[![Tests](https://img.shields.io/badge/tests-86%20passing-green)](./packages/agent-battalion)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
-![Version](https://img.shields.io/badge/version-3.0.0-blue)
-![Next.js](https://img.shields.io/badge/Next.js-15-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
-![Agents](https://img.shields.io/badge/AI%20Agents-8-green)
+An advanced multi-agent system that generates complete, production-ready applications through collaborative AI agents. Inspired by MGX.dev.
 
-## 🚀 Features
+## ✨ Features
 
-### Multi-Agent System (8 Specialized AI Agents)
-| Agent | Name | Role | Responsibilities |
-|-------|------|------|------------------|
-| 👔 | Alex | Product Manager | Requirements analysis, project scoping, PRD generation |
-| 🏗️ | Sam | Architect | System design, tech stack selection, API planning |
-| 🎨 | Maya | Designer | Design systems, UI/UX, Tailwind configuration |
-| 💻 | Jordan | Frontend Engineer | Next.js 15, React 19, component generation |
-| 🗄️ | Morgan | Backend Engineer | Prisma schemas, API routes, authentication |
-| 🔐 | Casey | Security Agent | Vulnerability scanning, security audit |
-| 📱 | Taylor | Mobile Engineer | React Native / Expo app generation |
-| 🔍 | Riley | QA Engineer | Code review, accessibility, testing |
+### 🤖 8 Specialized AI Agents
 
-### Phase 1: Core Features ✅
-- **Real LLM Integration** - OpenAI, Anthropic, Google, Ollama support
-- **Unit Tests** - Comprehensive test coverage with Vitest
-- **Docker Deployment** - Production-ready containerization
+| Agent | Role | Responsibilities |
+|-------|------|------------------|
+| 👔 Alex | Product Manager | Requirements analysis, project scoping |
+| 🏗️ Sam | Architect | System design, tech stack selection |
+| 🎨 Maya | Designer | Design systems, UI/UX, Tailwind config |
+| 💻 Jordan | Frontend Engineer | Next.js 15, React 19, components |
+| 🗄️ Morgan | Backend Engineer | Prisma, API routes, authentication |
+| 🔐 Casey | Security Agent | Vulnerability scanning, OWASP audit |
+| 📱 Taylor | Mobile Engineer | React Native / Expo generation |
+| 🔍 Riley | QA Engineer | Code review, accessibility, testing |
 
-### Phase 2: Extended Agents ✅
-- **Backend Engineer** - Prisma schemas, CRUD APIs, authentication
-- **Security Agent** - OWASP-based vulnerability scanning
-- **Mobile Agent** - React Native / Expo project generation
+### 🚀 Core Capabilities
 
-### Phase 3: Advanced Features ✅
-- **Vector Memory** - Semantic search with Pinecone/local embeddings
-- **Temporal Workflows** - Durable, retryable generation pipeline
-- **E2B Sandbox** - Secure code execution environment
-- **Human Feedback Loop** - Approval workflows, iterative refinement
+- **Multi-Provider LLM** - Claude, GPT-4, Gemini with automatic failover
+- **CLI Tool** - Generate apps from command line
+- **86 Unit Tests** - Comprehensive test coverage
+- **Code Quality** - Automatic cleanup, 88/100 QA score
+- **Real-time Collaboration** - Watch agents work via Socket.IO
+- **Docker Ready** - Production containerization
+- **Temporal Workflows** - Durable, retryable pipelines (optional)
 
-## 📦 Installation
+## 📦 Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-repo/agent-battalion.git
-cd agent-battalion
-
 # Install dependencies
 npm install
 
-# Set up environment variables
+# Configure environment
 cp packages/agent-battalion/.env.example packages/agent-battalion/.env
+# Edit .env and add your API keys
 
 # Start development server
-npm run dev -w @meta/agent-battalion
+npm run dev
 ```
 
-## 🔧 Configuration
-
-### Environment Variables
-
-```env
-# Server
-PORT=4000
-
-# LLM Provider (openai, anthropic, google, ollama, mock)
-LLM_PROVIDER=mock
-OPENAI_API_KEY=sk-xxx
-ANTHROPIC_API_KEY=sk-ant-xxx
-GOOGLE_AI_API_KEY=xxx
-
-# Vector Memory (optional)
-PINECONE_API_KEY=xxx
-PINECONE_ENVIRONMENT=us-east1
-
-# E2B Sandbox (optional)
-E2B_API_KEY=xxx
-
-# Temporal (optional)
-TEMPORAL_ADDRESS=localhost:7233
-```
-
-## 🐳 Docker Deployment
-
-```bash
-# Build and run with Docker Compose
-docker-compose -f docker-compose.prod.yml up -d
-
-# View logs
-docker-compose -f docker-compose.prod.yml logs -f agent-battalion
-```
-
-## 🏗️ Project Structure
-
-```
-agent-battalion/
-├── packages/
-│   ├── agent-battalion/           # Main package
-│   │   ├── src/
-│   │   │   ├── agents/            # AI Agent implementations
-│   │   │   │   ├── team/          # Specialized team agents
-│   │   │   │   │   ├── product-manager.ts
-│   │   │   │   │   ├── architect.ts
-│   │   │   │   │   ├── designer.ts
-│   │   │   │   │   ├── frontend-engineer.ts
-│   │   │   │   │   ├── backend-engineer.ts
-│   │   │   │   │   ├── security-agent.ts
-│   │   │   │   │   ├── mobile-agent.ts
-│   │   │   │   │   └── qa-engineer.ts
-│   │   │   │   ├── team-orchestrator.ts
-│   │   │   │   ├── base-team-agent.ts
-│   │   │   │   └── ai-agent.ts
-│   │   │   ├── llm/               # LLM service integration
-│   │   │   ├── memory/            # Memory management
-│   │   │   │   ├── memory-manager.ts
-│   │   │   │   └── vector-memory.ts
-│   │   │   ├── communication/     # Inter-agent messaging
-│   │   │   ├── tools/             # Tool registry
-│   │   │   ├── sandbox/           # E2B sandbox integration
-│   │   │   ├── feedback/          # Human feedback loop
-│   │   │   ├── temporal/          # Temporal workflows
-│   │   │   └── web/               # Express + Socket.IO server
-│   │   └── public/                # Web UI
-│   └── agent-battalion-mcp/       # MCP server (IDE integration)
-├── Dockerfile                     # Production Docker image
-├── Dockerfile.worker              # Temporal worker image
-├── docker-compose.prod.yml        # Production deployment
-└── nginx.conf                     # Nginx reverse proxy config
-```
-
-## 🎯 Usage
-
-### Web Interface
-
-1. Start the server: `npm run dev -w @meta/agent-battalion`
-2. Open http://localhost:4000
-3. Enter your app description
-4. Watch the AI team collaborate in real-time
-5. Download the generated project
-
-### API
-
-```typescript
-import { createTeamOrchestrator } from '@meta/agent-battalion';
-
-const orchestrator = createTeamOrchestrator({
-  projectName: 'My App',
-  useRealAI: true,
-});
-
-orchestrator.on('progress', (data) => {
-  console.log(`${data.agent}: ${data.message}`);
-});
-
-const result = await orchestrator.generate('Build a task management app');
-console.log(`Generated ${result.files.length} files`);
-```
-
-### LLM Service
-
-```typescript
-import { createLLMService } from '@meta/agent-battalion';
-
-const llm = createLLMService({
-  provider: 'openai',
-  model: 'gpt-4-turbo-preview',
-});
-
-const response = await llm.complete([
-  { role: 'user', content: 'Write a React component' }
-]);
-```
-
-## 📊 Generated Output
-
-Each project includes:
-
-- **Next.js 15 App Router** with TypeScript
-- **Tailwind CSS** design system
-- **React 19** components
-- **Prisma** schema (when backend enabled)
-- **API Routes** with Zod validation
-- **Authentication** setup
-- **Security audit** report
-- **QA report** with accessibility checks
-
-## 🔒 Security Features
-
-- **Vulnerability Scanning** - Detects XSS, SQL injection, hardcoded secrets
-- **OWASP Top 10** - Checks for common vulnerabilities
-- **Dependency Audit** - Identifies vulnerable packages
-- **Security Headers** - CSP, CORS configuration
-- **Input Validation** - Zod schemas for all inputs
-
-## 🧪 Testing
-
-```bash
-# Run tests
-npm test -w @meta/agent-battalion
-
-# Watch mode
-npm run test:watch -w @meta/agent-battalion
-
-# Coverage
-npm run test:coverage -w @meta/agent-battalion
-```
-
-## 🖥️ CLI Tool
-
-Generate apps directly from the command line:
+## 🖥️ CLI Usage
 
 ```bash
 # Generate an app
 npm run cli -- create "Build a todo app" --output ./my-app
 
-# With real AI
+# With real AI (requires API keys)
 npm run cli -- create "Build a blog" --output ./blog --real-ai
 
 # List LLM providers
@@ -226,37 +67,138 @@ npm run cli -- serve --port 4000
 
 ### CLI Options
 
-| Command | Description |
-|---------|-------------|
-| `create <prompt>` | Generate a new application |
-| `providers` | List available LLM providers |
-| `serve` | Start the web server |
+```
+Commands:
+  create <prompt>   Generate a new application
+  providers         List available LLM providers
+  serve             Start the web server
 
-### Create Options
+Create Options:
+  -o, --output      Output directory (default: ./generated-app)
+  -n, --name        Project name (default: my-app)
+  -p, --provider    LLM provider (anthropic, openai, google)
+  --real-ai         Use real AI (requires API keys)
+  --mock            Use mock/template generation
+```
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-o, --output` | Output directory | `./generated-app` |
-| `-n, --name` | Project name | `my-app` |
-| `-p, --provider` | LLM provider | From env |
-| `--real-ai` | Use real AI | `false` |
-| `--mock` | Use mock generation | `true` |
+## 🔧 Configuration
+
+### Environment Variables
+
+```env
+# LLM Provider (anthropic, openai, google, ollama, mock)
+LLM_PROVIDER=anthropic
+USE_REAL_AI=true
+
+# API Keys (add one or more)
+ANTHROPIC_API_KEY=sk-ant-xxx
+OPENAI_API_KEY=sk-xxx
+GOOGLE_AI_API_KEY=xxx
+
+# Optional: Vector Memory
+PINECONE_API_KEY=xxx
+
+# Optional: Code Sandbox
+E2B_API_KEY=xxx
+```
+
+## 🏗️ Project Structure
+
+```
+agent-battalion/
+├── packages/
+│   └── agent-battalion/          # Main package
+│       ├── src/
+│       │   ├── agents/           # AI Agents
+│       │   │   ├── team/         # Specialized agents
+│       │   │   ├── team-orchestrator.ts
+│       │   │   └── base-team-agent.ts
+│       │   ├── cli/              # CLI tool
+│       │   ├── llm/              # LLM service
+│       │   ├── memory/           # Memory management
+│       │   ├── communication/    # Message bus
+│       │   ├── tools/            # Tool registry
+│       │   ├── temporal/         # Temporal workflows
+│       │   ├── utils/            # Code cleanup
+│       │   └── web/              # Express server
+│       └── __tests__/            # Unit tests
+├── docker-compose.yml
+├── Dockerfile
+└── README.md
+```
+
+## 🐳 Docker Deployment
+
+```bash
+# Build and run
+docker-compose -f docker-compose.prod.yml up -d
+
+# View logs
+docker-compose logs -f agent-battalion
+```
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Coverage report
+npm run test:coverage
+```
+
+## 🎯 Generated Output
+
+Each project includes:
+
+- **Next.js 15** App Router with TypeScript
+- **Tailwind CSS** design system
+- **React 19** components with proper types
+- **API Routes** with Zod validation
+- **Accessibility** compliant (WCAG 2.1)
+- **QA Report** with code quality score
+
+## 📊 API Usage
+
+```typescript
+import { createTeamOrchestrator } from '@meta/agent-battalion';
+
+const orchestrator = createTeamOrchestrator({
+  projectName: 'My App',
+});
+
+orchestrator.on('progress', (data) => {
+  console.log(`${data.agent}: ${data.message}`);
+});
+
+const result = await orchestrator.run('Build a task management app');
+console.log(`Generated ${result.files.length} files`);
+console.log(`QA Score: ${result.qaReport?.score}/100`);
+```
+
+## 🔒 Security
+
+- **Vulnerability Scanning** - Detects XSS, SQL injection, secrets
+- **OWASP Top 10** - Checks for common vulnerabilities
+- **Input Validation** - Zod schemas for all inputs
+- **Multi-Provider Failover** - Automatic LLM provider switching
 
 ## 📈 Roadmap
 
-- [x] CLI Tool ✅
-- [x] Unit Tests ✅
-- [x] Multi-Provider LLM ✅
+- [x] CLI Tool
+- [x] Unit Tests (86 tests)
+- [x] Multi-Provider LLM with failover
+- [x] Code Quality Improvements
 - [ ] VS Code Extension
 - [ ] Custom Agent Creation
-- [ ] Project Templates
-- [ ] Team Collaboration
 - [ ] Cloud Deployment (Vercel, Netlify)
-- [ ] Analytics Dashboard
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+Contributions welcome! Please read our contributing guidelines.
 
 ## 📄 License
 

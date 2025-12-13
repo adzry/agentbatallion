@@ -3,22 +3,22 @@
  *
  * Activities are the building blocks of workflows. They contain the
  * actual business logic that can fail, retry, and be traced.
+ *
+ * These activities use the TeamOrchestrator for AI-powered generation.
  */
-import { AnalysisResult, PlanResult, GeneratedFile, MissionConfig } from '../types.js';
-export interface AnalyzeInput {
-    missionId: string;
-    prompt: string;
-    config?: MissionConfig;
-}
-export interface PlanInput {
-    missionId: string;
-    analysis: AnalysisResult;
-    config?: MissionConfig;
-}
+import { GeneratedFile, MissionConfig } from '../types.js';
 export interface GenerateInput {
     missionId: string;
-    plan: PlanResult;
+    prompt: string;
     projectName: string;
+    config?: MissionConfig;
+}
+export interface GenerateResult {
+    success: boolean;
+    files: GeneratedFile[];
+    qaScore: number;
+    duration: number;
+    error?: string;
 }
 export interface ReviewInput {
     missionId: string;
@@ -41,31 +41,23 @@ export interface TestResult {
     coverage?: number;
 }
 /**
- * Analyze requirements using the Analyzer Agent
+ * Generate application using TeamOrchestrator
  */
-export declare function analyzeRequirements(input: AnalyzeInput): Promise<AnalysisResult>;
-/**
- * Plan architecture using the Planner Agent
- */
-export declare function planArchitecture(input: PlanInput): Promise<PlanResult>;
-/**
- * Generate code using the Coordinator Agent
- */
-export declare function generateCode(input: GenerateInput): Promise<GeneratedFile[]>;
+export declare function generateApplication(input: GenerateInput): Promise<GenerateResult>;
 /**
  * Review generated code
  */
 export declare function reviewCode(input: ReviewInput): Promise<ReviewResult>;
 /**
- * Run tests on generated code
+ * Run tests on generated code (placeholder)
  */
 export declare function runTests(input: TestInput): Promise<TestResult>;
 /**
- * Install dependencies in sandbox
+ * Install dependencies in sandbox (placeholder)
  */
 export declare function installDependencies(sandboxId: string, packageJson: string): Promise<void>;
 /**
- * Start preview server
+ * Start preview server (placeholder)
  */
 export declare function startPreview(sandboxId: string, port: number): Promise<string>;
 //# sourceMappingURL=index.d.ts.map

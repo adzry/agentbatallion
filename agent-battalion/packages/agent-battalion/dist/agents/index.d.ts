@@ -1,11 +1,10 @@
 /**
- * Agent Battalion - MGX-style Multi-Agent System v2.0
+ * Agent Battalion v3.0 - Multi-Agent System
  *
- * Export all agents and orchestration components
+ * Production-ready AI-powered full-stack app generator
  */
 export * from './types.js';
 export { BaseTeamAgent } from './base-team-agent.js';
-export { AIAgent, type AIAgentConfig } from './ai-agent.js';
 export { ProductManagerAgent } from './team/product-manager.js';
 export { ArchitectAgent } from './team/architect.js';
 export { DesignerAgent } from './team/designer.js';
@@ -22,4 +21,5 @@ export { MessageBus, createMessageBus, type Message, type Subscription, } from '
 export { ToolRegistry, createToolRegistry, type Tool, type ToolParameter, type ToolCategory, } from '../tools/tool-registry.js';
 export { E2BSandbox, createSandbox, type SandboxConfig, type SandboxFile, type ExecutionResult, } from '../sandbox/e2b-sandbox.js';
 export { HumanFeedbackManager, createFeedbackManager, requiresApproval, type FeedbackRequest, type FeedbackResponse, type FeedbackType, type FeedbackStatus, type FeedbackConfig, } from '../feedback/human-feedback.js';
+export { cleanupCode, cleanupTSX, cleanupCSS, cleanupJSON } from '../utils/code-cleanup.js';
 //# sourceMappingURL=index.d.ts.map

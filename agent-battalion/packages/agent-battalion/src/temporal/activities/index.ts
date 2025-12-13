@@ -3,29 +3,26 @@
  * 
  * Activities are the building blocks of workflows. They contain the
  * actual business logic that can fail, retry, and be traced.
+ * 
+ * These activities use the TeamOrchestrator for AI-powered generation.
  */
 
-import { AnalysisResult, PlanResult, GeneratedFile, MissionConfig } from '../types.js';
-import { runAnalyzerAgent } from '../../langgraph/agents/analyzer-agent.js';
-import { runPlannerAgent } from '../../langgraph/agents/planner-agent.js';
-import { runCoordinatorAgent } from '../../langgraph/agents/coordinator-agent.js';
-
-export interface AnalyzeInput {
-  missionId: string;
-  prompt: string;
-  config?: MissionConfig;
-}
-
-export interface PlanInput {
-  missionId: string;
-  analysis: AnalysisResult;
-  config?: MissionConfig;
-}
+import { GeneratedFile, MissionConfig } from '../types.js';
+import { createTeamOrchestrator } from '../../agents/team-orchestrator.js';
 
 export interface GenerateInput {
   missionId: string;
-  plan: PlanResult;
+  prompt: string;
   projectName: string;
+  config?: MissionConfig;
+}
+
+export interface GenerateResult {
+  success: boolean;
+  files: GeneratedFile[];
+  qaScore: number;
+  duration: number;
+  error?: string;
 }
 
 export interface ReviewInput {
@@ -53,47 +50,39 @@ export interface TestResult {
 }
 
 /**
- * Analyze requirements using the Analyzer Agent
+ * Generate application using TeamOrchestrator
  */
-export async function analyzeRequirements(input: AnalyzeInput): Promise<AnalysisResult> {
-  console.log(`[Activity] Analyzing requirements for mission: ${input.missionId}`);
+export async function generateApplication(input: GenerateInput): Promise<GenerateResult> {
+  console.log(`[Activity] Generating application for mission: ${input.missionId}`);
   
   try {
-    const result = await runAnalyzerAgent(input.prompt, input.config);
-    return result;
-  } catch (error) {
-    console.error('Analysis failed:', error);
-    throw error;
-  }
-}
+    const orchestrator = createTeamOrchestrator({
+      projectName: input.projectName,
+    });
 
-/**
- * Plan architecture using the Planner Agent
- */
-export async function planArchitecture(input: PlanInput): Promise<PlanResult> {
-  console.log(`[Activity] Planning architecture for mission: ${input.missionId}`);
-  
-  try {
-    const result = await runPlannerAgent(input.analysis, input.config);
-    return result;
-  } catch (error) {
-    console.error('Planning failed:', error);
-    throw error;
-  }
-}
+    const result = await orchestrator.run(input.prompt);
 
-/**
- * Generate code using the Coordinator Agent
- */
-export async function generateCode(input: GenerateInput): Promise<GeneratedFile[]> {
-  console.log(`[Activity] Generating code for mission: ${input.missionId}`);
-  
-  try {
-    const result = await runCoordinatorAgent(input.plan, input.projectName);
-    return result;
+    return {
+      success: result.success,
+      files: result.files.map(f => ({
+        path: f.path,
+        content: f.content,
+        type: f.type as 'source' | 'config' | 'asset' | 'doc',
+      })),
+      qaScore: result.qaReport?.score || 0,
+      duration: result.duration,
+    };
   } catch (error) {
-    console.error('Code generation failed:', error);
-    throw error;
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Generation failed:', message);
+    
+    return {
+      success: false,
+      files: [],
+      qaScore: 0,
+      duration: 0,
+      error: message,
+    };
   }
 }
 
@@ -103,7 +92,6 @@ export async function generateCode(input: GenerateInput): Promise<GeneratedFile[
 export async function reviewCode(input: ReviewInput): Promise<ReviewResult> {
   console.log(`[Activity] Reviewing code for mission: ${input.missionId}`);
   
-  // Simple validation for now
   const issues: string[] = [];
   
   for (const file of input.files) {
@@ -114,10 +102,6 @@ export async function reviewCode(input: ReviewInput): Promise<ReviewResult> {
     
     // Check for common issues in TypeScript/JavaScript files
     if (file.path.endsWith('.ts') || file.path.endsWith('.tsx')) {
-      if (file.content.includes('any[]') || file.content.includes(': any')) {
-        // This is acceptable for generated code
-      }
-      
       // Check for console.log statements
       if (file.content.includes('console.log')) {
         issues.push(`Console.log found in: ${file.path}`);
@@ -132,12 +116,12 @@ export async function reviewCode(input: ReviewInput): Promise<ReviewResult> {
 }
 
 /**
- * Run tests on generated code
+ * Run tests on generated code (placeholder)
  */
 export async function runTests(input: TestInput): Promise<TestResult> {
   console.log(`[Activity] Running tests for mission: ${input.missionId}`);
   
-  // Mock test results for now
+  // Mock test results - in production, this would run actual tests
   return {
     passed: true,
     tests: 0,
@@ -147,7 +131,7 @@ export async function runTests(input: TestInput): Promise<TestResult> {
 }
 
 /**
- * Install dependencies in sandbox
+ * Install dependencies in sandbox (placeholder)
  */
 export async function installDependencies(
   sandboxId: string,
@@ -158,7 +142,7 @@ export async function installDependencies(
 }
 
 /**
- * Start preview server
+ * Start preview server (placeholder)
  */
 export async function startPreview(
   sandboxId: string,
