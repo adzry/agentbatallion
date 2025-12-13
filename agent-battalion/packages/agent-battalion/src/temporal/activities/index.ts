@@ -180,3 +180,7 @@ export type { KnowledgeHarvestInput, KnowledgeHarvestResult } from './knowledge-
 // Export Voice activities (Phase 7: Project Siren)
 export { generateAudioSummary, processVoiceCommand } from './daily-standup.js';
 export type { StandupInput, StandupResult } from './daily-standup.js';
+
+// Export Infrastructure activities (Phase 10: Project Titan)
+export { generateInfrastructure, validateInfrastructureBudget } from './infrastructure.js';
+export type { InfrastructureInput, InfrastructureResult } from './infrastructure.js';

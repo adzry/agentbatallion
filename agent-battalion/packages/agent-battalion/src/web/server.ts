@@ -71,6 +71,9 @@ app.use(express.static(path.join(__dirname, '../../public')));
 // Import voice activity (Phase 7: Project Siren)
 import { generateAudioSummary, processVoiceCommand } from '../temporal/activities/daily-standup.js';
 
+// Import infrastructure activity (Phase 10: Project Titan)
+import { generateInfrastructure } from '../temporal/activities/infrastructure.js';
+
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ 
@@ -181,6 +184,35 @@ app.get('/api/mission/:id/audio-summary', async (req: Request, res: Response) =>
   } catch (error) {
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Audio generation failed' 
+    });
+  }
+});
+
+// Infrastructure generation endpoint (Phase 10: Project Titan)
+app.post('/api/mission/:id/infrastructure', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { appType, expectedTraffic, database, storage, budget, region } = req.body;
+
+  if (!appType || !budget) {
+    res.status(400).json({ error: 'appType and budget are required' });
+    return;
+  }
+
+  try {
+    const result = await generateInfrastructure({
+      missionId: id,
+      appType,
+      expectedTraffic: expectedTraffic || 'moderate',
+      database,
+      storage,
+      budget,
+      region,
+    });
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Infrastructure generation failed' 
     });
   }
 });
