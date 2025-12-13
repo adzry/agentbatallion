@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Architect Agent
  *
@@ -9,10 +8,8 @@
  * - Making technology decisions
  * - Creating technical specifications
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ArchitectAgent = void 0;
-const base_team_agent_js_1 = require("../base-team-agent.js");
-class ArchitectAgent extends base_team_agent_js_1.BaseTeamAgent {
+import { BaseTeamAgent } from '../base-team-agent.js';
+export class ArchitectAgent extends BaseTeamAgent {
     constructor(memory, tools, messageBus) {
         const profile = {
             id: 'architect-agent',
@@ -55,35 +52,123 @@ Always consider:
     async designArchitecture(requirements, projectContext) {
         this.updateStatus('thinking');
         this.think('Analyzing requirements to design optimal architecture...');
-        // Analyze requirements for architecture decisions
-        const analysis = await this.act('think', 'Analyzing requirements', async () => {
-            return this.analyzeForArchitecture(requirements);
-        });
-        this.updateProgress(20);
-        // Define tech stack
-        const techStack = await this.act('plan', 'Defining technology stack', async () => {
-            return this.defineTechStack(analysis, projectContext);
-        });
-        this.updateProgress(40);
-        // Design component structure
-        const components = await this.act('plan', 'Designing component structure', async () => {
-            return this.designComponents(requirements, analysis);
-        });
-        this.updateProgress(60);
-        // Create architecture specification
-        const architecture = await this.act('plan', 'Creating architecture spec', async () => {
-            return this.createArchitectureSpec(components, analysis);
-        });
-        this.updateProgress(80);
-        // Define file structure
-        const fileStructure = await this.act('plan', 'Planning file structure', async () => {
-            return this.planFileStructure(architecture, techStack);
-        });
+        let architecture;
+        let fileStructure;
+        let techStack;
+        if (this.isRealAIEnabled()) {
+            // Use real AI for architecture design
+            this.think('Using AI to design architecture...');
+            const aiResult = await this.act('plan', 'AI designing architecture', async () => {
+                return this.designWithAI(requirements, projectContext);
+            });
+            this.updateProgress(70);
+            architecture = aiResult.architecture;
+            fileStructure = aiResult.fileStructure;
+            techStack = aiResult.techStack;
+        }
+        else {
+            // Use template-based design
+            const analysis = await this.act('think', 'Analyzing requirements', async () => {
+                return this.analyzeForArchitecture(requirements);
+            });
+            this.updateProgress(20);
+            techStack = await this.act('plan', 'Defining technology stack', async () => {
+                return this.defineTechStack(analysis, projectContext);
+            });
+            this.updateProgress(40);
+            const components = await this.act('plan', 'Designing component structure', async () => {
+                return this.designComponents(requirements, analysis);
+            });
+            this.updateProgress(60);
+            architecture = await this.act('plan', 'Creating architecture spec', async () => {
+                return this.createArchitectureSpec(components, analysis);
+            });
+            this.updateProgress(80);
+            fileStructure = await this.act('plan', 'Planning file structure', async () => {
+                return this.planFileStructure(architecture, techStack);
+            });
+        }
         // Create architecture document artifact
         this.createArtifact('architecture', 'Architecture Specification', this.generateArchDoc(architecture, techStack, fileStructure), 'docs/ARCHITECTURE.md');
         this.updateStatus('complete');
         this.updateProgress(100);
         return { architecture, fileStructure, techStack };
+    }
+    /**
+     * Use AI to design architecture
+     */
+    async designWithAI(requirements, projectContext) {
+        const reqList = requirements.map(r => `- ${r.description}`).join('\n');
+        const prompt = `Design a Next.js 15 application architecture for this project:
+
+Project: ${projectContext.name || 'Web Application'}
+Description: ${projectContext.description || 'Modern web application'}
+
+Requirements:
+${reqList}
+
+Return a JSON object with this exact structure:
+{
+  "techStack": {
+    "frontend": {
+      "framework": "Next.js 15",
+      "language": "TypeScript",
+      "styling": "Tailwind CSS",
+      "stateManagement": "React hooks or Zustand"
+    },
+    "backend": {
+      "framework": "Next.js API Routes",
+      "language": "TypeScript",
+      "database": "PostgreSQL or null if not needed",
+      "orm": "Prisma or null if not needed"
+    },
+    "infrastructure": {
+      "hosting": "Vercel",
+      "ci_cd": "GitHub Actions"
+    }
+  },
+  "architecture": {
+    "type": "jamstack or monolith",
+    "components": [
+      {
+        "name": "ComponentName",
+        "type": "layout | component | page | provider",
+        "description": "What this component does",
+        "dependencies": ["OtherComponent"]
+      }
+    ],
+    "dataFlow": [
+      {
+        "from": "Source",
+        "to": "Destination",
+        "data": "What data flows",
+        "protocol": "HTTP or WebSocket"
+      }
+    ],
+    "integrations": [
+      { "name": "ServiceName", "type": "hosting | auth | database | analytics" }
+    ]
+  },
+  "fileStructure": [
+    "package.json",
+    "app/layout.tsx",
+    "app/page.tsx",
+    "components/ui/button.tsx"
+  ]
+}
+
+Design at least:
+- 10 components (layouts, UI, sections)
+- 15-30 files covering all features
+- Proper data flow for the features
+
+Be specific and comprehensive.`;
+        const aiResponse = await this.promptLLM(prompt, { expectJson: true });
+        return {
+            architecture: aiResponse.architecture,
+            fileStructure: aiResponse.fileStructure,
+            techStack: aiResponse.techStack,
+        };
     }
     async executeTask(task) {
         switch (task.title) {
@@ -402,5 +487,4 @@ ${fileStructure.map(f => f).join('\n')}
         return { optimized: true };
     }
 }
-exports.ArchitectAgent = ArchitectAgent;
 //# sourceMappingURL=architect.js.map

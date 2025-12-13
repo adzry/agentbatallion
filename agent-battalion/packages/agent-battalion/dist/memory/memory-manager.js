@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Memory Manager
  *
@@ -8,11 +7,8 @@
  * - Semantic search and recall
  * - Context management
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MemoryManager = void 0;
-exports.createMemoryManager = createMemoryManager;
-const uuid_1 = require("uuid");
-class MemoryManager {
+import { v4 as uuidv4 } from 'uuid';
+export class MemoryManager {
     shortTermMemory = new Map();
     longTermMemory = new Map();
     context = new Map();
@@ -29,7 +25,7 @@ class MemoryManager {
      */
     async store(type, key, value, options = {}) {
         const entry = {
-            id: (0, uuid_1.v4)(),
+            id: uuidv4(),
             type,
             key,
             value,
@@ -218,11 +214,10 @@ class MemoryManager {
         this.context = new Map(data.context);
     }
 }
-exports.MemoryManager = MemoryManager;
 /**
  * Create a shared memory manager instance
  */
-function createMemoryManager(config) {
+export function createMemoryManager(config) {
     return new MemoryManager(config);
 }
 //# sourceMappingURL=memory-manager.js.map

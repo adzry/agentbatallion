@@ -45,9 +45,13 @@ export declare class LLMService extends EventEmitter {
     constructor(config?: Partial<LLMConfig>);
     private getApiKey;
     /**
-     * Generate a completion
+     * Generate a completion with automatic failover
      */
-    complete(messages: Message[]): Promise<LLMResponse>;
+    complete(messages: Message[], enableFailover?: boolean): Promise<LLMResponse>;
+    /**
+     * Get ordered list of providers to try (primary first, then failovers)
+     */
+    private getProvidersWithFailover;
     /**
      * Stream a completion
      */
@@ -100,6 +104,14 @@ export declare class LLMService extends EventEmitter {
      * Check if real LLM is configured
      */
     isRealLLM(): boolean;
+    /**
+     * Get list of available (configured) providers
+     */
+    getAvailableProviders(): LLMProvider[];
+    /**
+     * Get primary provider
+     */
+    getPrimaryProvider(): LLMProvider;
 }
 /**
  * Create LLM service instance

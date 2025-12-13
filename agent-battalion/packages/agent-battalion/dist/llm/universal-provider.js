@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Universal LLM Provider
  *
@@ -9,13 +8,9 @@
  * - Azure OpenAI
  * - Ollama (local models)
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.UniversalProvider = void 0;
-exports.createLLM = createLLM;
-exports.createDefaultProvider = createDefaultProvider;
-const openai_1 = require("@langchain/openai");
-const anthropic_1 = require("@langchain/anthropic");
-const google_genai_1 = require("@langchain/google-genai");
+import { ChatOpenAI } from '@langchain/openai';
+import { ChatAnthropic } from '@langchain/anthropic';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 // Default models for each provider
 const DEFAULT_MODELS = {
     openai: 'gpt-4-turbo-preview',
@@ -27,33 +22,33 @@ const DEFAULT_MODELS = {
 /**
  * Creates an LLM instance based on the provided configuration
  */
-function createLLM(config) {
+export function createLLM(config) {
     const { provider, model, temperature = 0.7, maxTokens = 4096 } = config;
     const selectedModel = model || DEFAULT_MODELS[provider];
     switch (provider) {
         case 'openai':
-            return new openai_1.ChatOpenAI({
+            return new ChatOpenAI({
                 modelName: selectedModel,
                 temperature,
                 maxTokens,
                 openAIApiKey: config.apiKey || process.env.OPENAI_API_KEY,
             });
         case 'anthropic':
-            return new anthropic_1.ChatAnthropic({
+            return new ChatAnthropic({
                 modelName: selectedModel,
                 temperature,
                 maxTokens,
                 anthropicApiKey: config.apiKey || process.env.ANTHROPIC_API_KEY,
             });
         case 'google':
-            return new google_genai_1.ChatGoogleGenerativeAI({
+            return new ChatGoogleGenerativeAI({
                 modelName: selectedModel,
                 temperature,
                 maxOutputTokens: maxTokens,
                 apiKey: config.apiKey || process.env.GOOGLE_AI_API_KEY,
             });
         case 'azure':
-            return new openai_1.ChatOpenAI({
+            return new ChatOpenAI({
                 modelName: selectedModel,
                 temperature,
                 maxTokens,
@@ -62,7 +57,7 @@ function createLLM(config) {
                 azureOpenAIBasePath: process.env.AZURE_OPENAI_ENDPOINT,
             });
         case 'ollama':
-            return new openai_1.ChatOpenAI({
+            return new ChatOpenAI({
                 modelName: selectedModel,
                 temperature,
                 maxTokens,
@@ -77,7 +72,7 @@ function createLLM(config) {
 /**
  * Universal Provider class with fallback support
  */
-class UniversalProvider {
+export class UniversalProvider {
     primaryLLM;
     fallbackLLM;
     constructor(config) {
@@ -114,11 +109,10 @@ class UniversalProvider {
         }
     }
 }
-exports.UniversalProvider = UniversalProvider;
 /**
  * Create a default provider from environment variables
  */
-function createDefaultProvider() {
+export function createDefaultProvider() {
     const provider = process.env.LLM_PROVIDER || 'openai';
     const model = process.env.LLM_MODEL;
     return new UniversalProvider({

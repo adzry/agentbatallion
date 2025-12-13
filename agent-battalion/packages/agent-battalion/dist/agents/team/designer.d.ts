@@ -19,6 +19,10 @@ export declare class DesignerAgent extends BaseTeamAgent {
      * Create design system based on project requirements
      */
     createDesignSystem(requirements: Requirement[], projectContext: Partial<ProjectContext>): Promise<DesignSystem>;
+    /**
+     * Use AI to create design system
+     */
+    private createDesignWithAI;
     protected executeTask(task: AgentTask): Promise<any>;
     private analyzeDesignNeeds;
     private createColorPalette;

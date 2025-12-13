@@ -30,6 +30,7 @@ import { QAEngineerAgent, QAReport } from './team/qa-engineer.js';
 import { MemoryManager, createMemoryManager } from '../memory/memory-manager.js';
 import { ToolRegistry, createToolRegistry } from '../tools/tool-registry.js';
 import { MessageBus, createMessageBus } from '../communication/message-bus.js';
+import { cleanupCode } from '../utils/code-cleanup.js';
 
 export interface OrchestrationResult {
   projectId: string;
@@ -207,7 +208,14 @@ export class TeamOrchestrator extends EventEmitter {
 
       await this.memory.store('files', 'current', files);
 
-      this.emitProgress('development', 'frontend_engineer', '💻', `Generated ${files.length} files`, 75);
+      this.emitProgress('development', 'frontend_engineer', '💻', `Generated ${files.length} files`, 70);
+
+      // Phase 4.5: Post-process and cleanup generated code
+      this.emitProgress('cleanup', 'frontend_engineer', '🧹', 'Cleaning up generated code...', 73);
+      files = this.cleanupGeneratedFiles(files);
+      await this.memory.store('files', 'current', files);
+
+      this.emitProgress('development', 'frontend_engineer', '💻', `Code cleanup complete`, 75);
 
       // Phase 5: QA Engineer - Review & Test
       let qaReport: QAReport | undefined;
@@ -328,6 +336,38 @@ export class TeamOrchestrator extends EventEmitter {
     for (const agent of this.agents.values()) {
       agent.reset();
     }
+  }
+
+  /**
+   * Cleanup and post-process generated files
+   */
+  private cleanupGeneratedFiles(files: ProjectFile[]): ProjectFile[] {
+    return files.map(file => {
+      // Only cleanup code files
+      if (!file.path.match(/\.(tsx?|jsx?|css|json)$/)) {
+        return file;
+      }
+
+      const result = cleanupCode(file.content, file.path);
+      
+      // Log fixes for debugging
+      if (result.fixes.length > 0) {
+        this.events.push({
+          id: uuidv4(),
+          type: 'agent_thinking',
+          agentId: 'system',
+          timestamp: new Date(),
+          data: {
+            message: `Cleaned ${file.path}: ${result.fixes.join(', ')}`,
+          },
+        });
+      }
+
+      return {
+        ...file,
+        content: result.code,
+      };
+    });
   }
 }
 

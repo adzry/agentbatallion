@@ -19,6 +19,14 @@ export declare class FrontendEngineerAgent extends BaseTeamAgent {
      * Generate all frontend code based on architecture and design
      */
     generateCode(architecture: ArchitectureSpec, designSystem: DesignSystem, techStack: TechStack, fileStructure: string[]): Promise<ProjectFile[]>;
+    /**
+     * Generate file content using AI
+     */
+    private generateWithAI;
+    /**
+     * Post-process generated code to ensure quality
+     */
+    private postProcessCode;
     protected executeTask(task: AgentTask): Promise<any>;
     private generateFileContent;
     private getFileType;

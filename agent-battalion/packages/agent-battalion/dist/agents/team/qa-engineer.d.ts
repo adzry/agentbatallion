@@ -39,6 +39,10 @@ export declare class QAEngineerAgent extends BaseTeamAgent {
      * Review all generated code
      */
     reviewCode(files: ProjectFile[], requirements: Requirement[]): Promise<QAReport>;
+    /**
+     * Use AI for comprehensive code review
+     */
+    private reviewWithAI;
     protected executeTask(task: AgentTask): Promise<any>;
     private reviewFile;
     private checkRequirementsCoverage;

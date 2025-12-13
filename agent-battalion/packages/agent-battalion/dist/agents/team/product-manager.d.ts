@@ -22,6 +22,10 @@ export declare class ProductManagerAgent extends BaseTeamAgent {
         requirements: Requirement[];
         projectContext: Partial<ProjectContext>;
     }>;
+    /**
+     * Use AI to analyze requirements
+     */
+    private analyzeWithAI;
     protected executeTask(task: AgentTask): Promise<any>;
     private extractRequirements;
     private structureRequirements;

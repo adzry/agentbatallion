@@ -91,20 +91,43 @@ Focus on:
     this.updateStatus('working');
     this.think('Starting comprehensive code review...');
 
-    const issues: QAIssue[] = [];
-    const suggestions: string[] = [];
+    let issues: QAIssue[] = [];
+    let suggestions: string[] = [];
 
-    // Review each file
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      this.think(`Reviewing: ${file.path}`);
-
-      const fileIssues = await this.act('review', `Reviewing ${file.path}`, async () => {
-        return this.reviewFile(file);
+    if (this.isRealAIEnabled()) {
+      // Use AI for comprehensive code review
+      this.think('Using AI for deep code review...');
+      
+      const aiReport = await this.act('review', 'AI code review', async () => {
+        return this.reviewWithAI(files, requirements);
       });
+      
+      issues = aiReport.issues;
+      suggestions = aiReport.suggestions;
+      this.updateProgress(80);
+    } else {
+      // Use rule-based review
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        this.think(`Reviewing: ${file.path}`);
 
-      issues.push(...fileIssues);
-      this.updateProgress(((i + 1) / files.length) * 70);
+        const fileIssues = await this.act('review', `Reviewing ${file.path}`, async () => {
+          return this.reviewFile(file);
+        });
+
+        issues.push(...fileIssues);
+        this.updateProgress(((i + 1) / files.length) * 70);
+      }
+
+      // Check accessibility
+      this.think('Checking accessibility...');
+      const a11yIssues = await this.act('review', 'Accessibility check', async () => {
+        return this.checkAccessibility(files);
+      });
+      issues.push(...a11yIssues);
+      this.updateProgress(80);
+
+      suggestions = this.generateSuggestions(issues, files);
     }
 
     // Check requirements coverage
@@ -112,33 +135,36 @@ Focus on:
     const reqCoverage = await this.act('review', 'Checking requirements', async () => {
       return this.checkRequirementsCoverage(files, requirements);
     });
-    this.updateProgress(80);
-
-    // Check accessibility
-    this.think('Checking accessibility...');
-    const a11yIssues = await this.act('review', 'Accessibility check', async () => {
-      return this.checkAccessibility(files);
-    });
-    issues.push(...a11yIssues);
     this.updateProgress(90);
 
-    // Generate suggestions
-    suggestions.push(...this.generateSuggestions(issues, files));
-
-    // Calculate scores
+    // Calculate scores with more balanced weighting
     const criticalIssues = issues.filter(i => i.severity === 'critical').length;
     const majorIssues = issues.filter(i => i.severity === 'major').length;
-    const score = Math.max(0, 100 - (criticalIssues * 20) - (majorIssues * 10) - (issues.length * 2));
+    const minorIssues = issues.filter(i => i.severity === 'minor').length;
+    const infoIssues = issues.filter(i => i.severity === 'info').length;
+    
+    // Balanced scoring: start at 100, deduct based on severity
+    // Critical: -15 each, Major: -7 each, Minor: -3 each, Info: -1 each
+    // Minimum score is 30 to reward any effort
+    const deductions = (criticalIssues * 15) + (majorIssues * 7) + (minorIssues * 3) + (infoIssues * 1);
+    const score = Math.max(30, 100 - deductions);
+    
+    // Add bonus points for good practices found
+    const hasTypeScript = files.some(f => f.path.endsWith('.ts') || f.path.endsWith('.tsx'));
+    const hasAccessibilityConsideration = files.some(f => f.content.includes('aria-') || f.content.includes('role='));
+    const hasErrorHandling = files.some(f => f.content.includes('catch') || f.content.includes('error'));
+    const bonusPoints = (hasTypeScript ? 5 : 0) + (hasAccessibilityConsideration ? 5 : 0) + (hasErrorHandling ? 5 : 0);
+    const finalScore = Math.min(100, score + bonusPoints);
 
     const report: QAReport = {
-      passed: criticalIssues === 0 && score >= 70,
-      score,
+      passed: criticalIssues === 0 && finalScore >= 70,
+      score: finalScore,
       issues,
       suggestions,
       coverage: {
         requirements: reqCoverage,
         components: this.calculateComponentCoverage(files),
-        accessibility: this.calculateA11yScore(a11yIssues),
+        accessibility: this.calculateA11yScore(issues.filter(i => i.category === 'accessibility')),
       },
     };
 
@@ -154,6 +180,108 @@ Focus on:
     this.updateProgress(100);
 
     return report;
+  }
+
+  /**
+   * Use AI for comprehensive code review
+   */
+  private async reviewWithAI(
+    files: ProjectFile[],
+    requirements: Requirement[]
+  ): Promise<{ issues: QAIssue[]; suggestions: string[] }> {
+    // Select key files for AI review (to manage API costs/time)
+    const keyFiles = files.filter(f => 
+      f.path.includes('page.tsx') ||
+      f.path.includes('layout.tsx') ||
+      f.path.includes('components/')
+    ).slice(0, 5);
+
+    const filesContext = keyFiles.map(f => 
+      `### ${f.path}\n\`\`\`tsx\n${f.content.slice(0, 2000)}${f.content.length > 2000 ? '\n// ... truncated' : ''}\n\`\`\``
+    ).join('\n\n');
+
+    const reqsList = requirements.map(r => `- ${r.description}`).join('\n');
+
+    const prompt = `Review this Next.js 15 codebase for quality, bugs, accessibility, and best practices:
+
+## Requirements to validate:
+${reqsList}
+
+## Code to review:
+${filesContext}
+
+Return a JSON object with this structure:
+{
+  "issues": [
+    {
+      "severity": "critical" | "major" | "minor" | "info",
+      "category": "bug" | "accessibility" | "performance" | "security" | "style" | "best-practice",
+      "file": "file path",
+      "message": "Description of the issue",
+      "suggestion": "How to fix it"
+    }
+  ],
+  "suggestions": [
+    "General improvement suggestion 1",
+    "General improvement suggestion 2"
+  ]
+}
+
+Check for:
+1. TypeScript type safety issues
+2. React best practices (hooks rules, key props, etc.)
+3. Accessibility issues (WCAG 2.1)
+4. Performance issues (unnecessary re-renders, missing optimizations)
+5. Security vulnerabilities
+6. Missing error handling
+7. Code quality and maintainability
+
+Be thorough but concise. Include 3-8 issues and 3-5 suggestions.`;
+
+    interface AIReviewResponse {
+      issues: Array<{
+        severity: 'critical' | 'major' | 'minor' | 'info';
+        category: 'bug' | 'accessibility' | 'performance' | 'security' | 'style' | 'best-practice';
+        file: string;
+        message: string;
+        suggestion?: string;
+        line?: number;
+      }>;
+      suggestions: string[];
+    }
+
+    try {
+      const aiResponse = await this.promptLLM<AIReviewResponse>(prompt, { expectJson: true });
+
+      const issues: QAIssue[] = aiResponse.issues.map(issue => ({
+        id: uuidv4(),
+        severity: issue.severity,
+        category: issue.category,
+        file: issue.file,
+        line: issue.line,
+        message: issue.message,
+        suggestion: issue.suggestion,
+      }));
+
+      return {
+        issues,
+        suggestions: aiResponse.suggestions || [],
+      };
+    } catch (error) {
+      this.think('AI review failed, falling back to rule-based review');
+      
+      // Fall back to basic review
+      const basicIssues: QAIssue[] = [];
+      for (const file of files) {
+        basicIssues.push(...this.reviewFile(file));
+      }
+      basicIssues.push(...this.checkAccessibility(files));
+      
+      return {
+        issues: basicIssues,
+        suggestions: this.generateSuggestions(basicIssues, files),
+      };
+    }
   }
 
   protected async executeTask(task: AgentTask): Promise<any> {

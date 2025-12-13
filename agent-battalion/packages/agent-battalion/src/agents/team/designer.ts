@@ -73,44 +73,53 @@ Design principles:
     this.updateStatus('thinking');
     this.think('Analyzing requirements for design direction...');
 
-    // Analyze design requirements
-    const analysis = await this.act('think', 'Analyzing design requirements', async () => {
-      return this.analyzeDesignNeeds(requirements, projectContext);
-    });
+    let designSystem: DesignSystem;
 
-    this.updateProgress(20);
+    if (this.isRealAIEnabled()) {
+      // Use real AI for design system
+      this.think('Using AI to create design system...');
+      
+      designSystem = await this.act('design', 'AI creating design system', async () => {
+        return this.createDesignWithAI(requirements, projectContext);
+      });
+      
+      this.updateProgress(80);
+    } else {
+      // Use template-based design
+      const analysis = await this.act('think', 'Analyzing design requirements', async () => {
+        return this.analyzeDesignNeeds(requirements, projectContext);
+      });
 
-    // Create color palette
-    const colors = await this.act('design', 'Creating color palette', async () => {
-      return this.createColorPalette(analysis);
-    });
+      this.updateProgress(20);
 
-    this.updateProgress(40);
+      const colors = await this.act('design', 'Creating color palette', async () => {
+        return this.createColorPalette(analysis);
+      });
 
-    // Define typography
-    const typography = await this.act('design', 'Defining typography', async () => {
-      return this.defineTypography(analysis);
-    });
+      this.updateProgress(40);
 
-    this.updateProgress(60);
+      const typography = await this.act('design', 'Defining typography', async () => {
+        return this.defineTypography(analysis);
+      });
 
-    // Create component styles
-    const components = await this.act('design', 'Designing component styles', async () => {
-      return this.designComponents(analysis, colors);
-    });
+      this.updateProgress(60);
 
-    this.updateProgress(80);
+      const components = await this.act('design', 'Designing component styles', async () => {
+        return this.designComponents(analysis, colors);
+      });
 
-    // Create spacing system
-    const spacing = this.createSpacingSystem();
+      this.updateProgress(80);
 
-    const designSystem: DesignSystem = {
-      colors,
-      typography,
-      spacing,
-      components,
-      theme: analysis.prefersDark ? 'dark' : 'light',
-    };
+      const spacing = this.createSpacingSystem();
+
+      designSystem = {
+        colors,
+        typography,
+        spacing,
+        components,
+        theme: analysis.prefersDark ? 'dark' : 'light',
+      };
+    }
 
     // Create design system artifact
     this.createArtifact(
@@ -140,6 +149,110 @@ Design principles:
     this.updateProgress(100);
 
     return designSystem;
+  }
+
+  /**
+   * Use AI to create design system
+   */
+  private async createDesignWithAI(
+    requirements: Requirement[],
+    projectContext: Partial<ProjectContext>
+  ): Promise<DesignSystem> {
+    const reqList = requirements.map(r => `- ${r.description}`).join('\n');
+    
+    const prompt = `Create a comprehensive design system for this project:
+
+Project: ${projectContext.name || 'Web Application'}
+Description: ${projectContext.description || 'Modern web application'}
+
+Requirements:
+${reqList}
+
+Return a JSON object with this exact structure:
+{
+  "theme": "light" or "dark",
+  "colors": {
+    "primary": "#hex",
+    "primary-hover": "#hex",
+    "primary-light": "#hex",
+    "secondary": "#hex",
+    "secondary-hover": "#hex",
+    "accent": "#hex",
+    "success": "#hex",
+    "warning": "#hex",
+    "error": "#hex",
+    "background": "#hex",
+    "background-secondary": "#hex",
+    "background-tertiary": "#hex",
+    "surface": "#hex",
+    "surface-hover": "#hex",
+    "border": "#hex",
+    "border-light": "#hex",
+    "text": "#hex",
+    "text-secondary": "#hex",
+    "text-muted": "#hex"
+  },
+  "typography": {
+    "fontFamily": "Font Name, system-ui, sans-serif",
+    "headings": {
+      "h1": "Tailwind classes for h1",
+      "h2": "Tailwind classes for h2",
+      "h3": "Tailwind classes for h3",
+      "h4": "Tailwind classes for h4",
+      "h5": "Tailwind classes for h5",
+      "h6": "Tailwind classes for h6"
+    },
+    "body": "Tailwind classes for body text"
+  },
+  "spacing": {
+    "xs": "0.25rem",
+    "sm": "0.5rem",
+    "md": "1rem",
+    "lg": "1.5rem",
+    "xl": "2rem",
+    "2xl": "3rem",
+    "3xl": "4rem",
+    "section": "5rem"
+  },
+  "components": [
+    {
+      "name": "Button",
+      "variants": ["primary", "secondary", "outline", "ghost"],
+      "props": {
+        "primary": "Tailwind classes",
+        "secondary": "Tailwind classes",
+        "outline": "Tailwind classes",
+        "ghost": "Tailwind classes"
+      }
+    },
+    {
+      "name": "Card",
+      "variants": ["default", "elevated"],
+      "props": {
+        "default": "Tailwind classes",
+        "elevated": "Tailwind classes"
+      }
+    },
+    {
+      "name": "Input",
+      "variants": ["default", "filled"],
+      "props": {
+        "default": "Tailwind classes",
+        "filled": "Tailwind classes"
+      }
+    }
+  ]
+}
+
+Create a cohesive, modern design system that:
+- Reflects the project's personality
+- Has good contrast for accessibility
+- Uses modern, professional fonts
+- Includes at least 4 component definitions`;
+
+    const aiResponse = await this.promptLLM<DesignSystem>(prompt, { expectJson: true });
+    
+    return aiResponse;
   }
 
   protected async executeTask(task: AgentTask): Promise<any> {

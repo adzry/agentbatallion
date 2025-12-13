@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Vector Memory - Semantic Memory with Embeddings
  *
@@ -8,11 +7,8 @@
  * - Local fallback with cosine similarity
  * - Long-term persistent memory
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.VectorMemory = void 0;
-exports.createVectorMemory = createVectorMemory;
-const events_1 = require("events");
-const uuid_1 = require("uuid");
+import { EventEmitter } from 'events';
+import { v4 as uuidv4 } from 'uuid';
 /**
  * Local vector store using cosine similarity
  */
@@ -68,7 +64,7 @@ class LocalVectorStore {
 /**
  * Vector Memory Manager
  */
-class VectorMemory extends events_1.EventEmitter {
+export class VectorMemory extends EventEmitter {
     config;
     localStore;
     embeddingCache = new Map();
@@ -112,7 +108,7 @@ class VectorMemory extends events_1.EventEmitter {
      * Store a document with embedding
      */
     async store(content, metadata = {}) {
-        const id = (0, uuid_1.v4)();
+        const id = uuidv4();
         const embedding = await this.getEmbedding(content);
         const doc = {
             id,
@@ -333,11 +329,10 @@ class VectorMemory extends events_1.EventEmitter {
         this.embeddingCache.clear();
     }
 }
-exports.VectorMemory = VectorMemory;
 /**
  * Create vector memory instance
  */
-function createVectorMemory(config) {
+export function createVectorMemory(config) {
     return new VectorMemory(config);
 }
 //# sourceMappingURL=vector-memory.js.map

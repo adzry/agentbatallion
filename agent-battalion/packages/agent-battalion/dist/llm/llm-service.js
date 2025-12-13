@@ -1,4 +1,3 @@
-"use strict";
 /**
  * LLM Service - Real AI Integration
  *
@@ -8,23 +7,21 @@
  * - Google (Gemini Pro)
  * - Local (Ollama)
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.LLMService = void 0;
-exports.createLLMService = createLLMService;
-exports.getDefaultLLMService = getDefaultLLMService;
-const events_1 = require("events");
+import { EventEmitter } from 'events';
 // Default models per provider
 const DEFAULT_MODELS = {
-    openai: 'gpt-4-turbo-preview',
-    anthropic: 'claude-3-sonnet-20240229',
-    google: 'gemini-pro',
+    openai: 'gpt-4o-mini',
+    anthropic: 'claude-sonnet-4-20250514',
+    google: 'gemini-2.5-flash',
     ollama: 'llama2',
     mock: 'mock-model',
 };
+// Failover order for providers
+const FAILOVER_ORDER = ['anthropic', 'openai', 'google'];
 /**
  * LLM Service Class
  */
-class LLMService extends events_1.EventEmitter {
+export class LLMService extends EventEmitter {
     config;
     requestCount = 0;
     constructor(config) {
@@ -55,38 +52,76 @@ class LLMService extends events_1.EventEmitter {
         }
     }
     /**
-     * Generate a completion
+     * Generate a completion with automatic failover
      */
-    async complete(messages) {
+    async complete(messages, enableFailover = true) {
         this.requestCount++;
         this.emit('request', { messages, config: this.config });
-        try {
-            let response;
-            switch (this.config.provider) {
-                case 'openai':
-                    response = await this.completeOpenAI(messages);
-                    break;
-                case 'anthropic':
-                    response = await this.completeAnthropic(messages);
-                    break;
-                case 'google':
-                    response = await this.completeGoogle(messages);
-                    break;
-                case 'ollama':
-                    response = await this.completeOllama(messages);
-                    break;
-                case 'mock':
-                default:
-                    response = await this.completeMock(messages);
-                    break;
+        // Get providers to try (primary + failovers if enabled)
+        const providersToTry = enableFailover
+            ? this.getProvidersWithFailover()
+            : [this.config.provider];
+        let lastError = null;
+        for (const provider of providersToTry) {
+            try {
+                let response;
+                switch (provider) {
+                    case 'openai':
+                        if (!this.getApiKey('openai'))
+                            continue;
+                        response = await this.completeOpenAI(messages);
+                        break;
+                    case 'anthropic':
+                        if (!this.getApiKey('anthropic'))
+                            continue;
+                        response = await this.completeAnthropic(messages);
+                        break;
+                    case 'google':
+                        if (!this.getApiKey('google'))
+                            continue;
+                        response = await this.completeGoogle(messages);
+                        break;
+                    case 'ollama':
+                        response = await this.completeOllama(messages);
+                        break;
+                    case 'mock':
+                    default:
+                        response = await this.completeMock(messages);
+                        break;
+                }
+                this.emit('response', response);
+                return response;
             }
-            this.emit('response', response);
-            return response;
+            catch (error) {
+                lastError = error instanceof Error ? error : new Error(String(error));
+                this.emit('provider_failed', { provider, error: lastError.message });
+                // If failover is enabled, continue to next provider
+                if (enableFailover && providersToTry.indexOf(provider) < providersToTry.length - 1) {
+                    this.emit('failover', { from: provider, to: providersToTry[providersToTry.indexOf(provider) + 1] });
+                    continue;
+                }
+            }
         }
-        catch (error) {
-            this.emit('error', error);
-            throw error;
+        this.emit('error', lastError);
+        throw lastError || new Error('All providers failed');
+    }
+    /**
+     * Get ordered list of providers to try (primary first, then failovers)
+     */
+    getProvidersWithFailover() {
+        const primary = this.config.provider;
+        // For mock provider, don't failover
+        if (primary === 'mock' || primary === 'ollama') {
+            return [primary];
         }
+        // Start with primary, then add other configured providers
+        const providers = [primary];
+        for (const provider of FAILOVER_ORDER) {
+            if (provider !== primary && this.getApiKey(provider)) {
+                providers.push(provider);
+            }
+        }
+        return providers;
     }
     /**
      * Stream a completion
@@ -301,7 +336,7 @@ class LLMService extends events_1.EventEmitter {
             role: m.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: m.content }],
         }));
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${this.config.model}:generateContent?key=${this.config.apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.config.model}:generateContent?key=${this.config.apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -456,19 +491,39 @@ export function Component() {
     isRealLLM() {
         return this.config.provider !== 'mock' && !!this.config.apiKey;
     }
+    /**
+     * Get list of available (configured) providers
+     */
+    getAvailableProviders() {
+        const available = [];
+        if (this.getApiKey('anthropic'))
+            available.push('anthropic');
+        if (this.getApiKey('openai'))
+            available.push('openai');
+        if (this.getApiKey('google'))
+            available.push('google');
+        // Ollama and mock are always available
+        available.push('ollama', 'mock');
+        return available;
+    }
+    /**
+     * Get primary provider
+     */
+    getPrimaryProvider() {
+        return this.config.provider;
+    }
 }
-exports.LLMService = LLMService;
 /**
  * Create LLM service instance
  */
-function createLLMService(config) {
+export function createLLMService(config) {
     return new LLMService(config);
 }
 /**
  * Default singleton instance
  */
 let defaultInstance = null;
-function getDefaultLLMService() {
+export function getDefaultLLMService() {
     if (!defaultInstance) {
         defaultInstance = createLLMService();
     }

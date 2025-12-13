@@ -1,4 +1,3 @@
-"use strict";
 /**
  * Backend Engineer Agent
  *
@@ -9,10 +8,8 @@
  * - Authentication setup
  * - Data validation
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BackendEngineerAgent = void 0;
-const base_team_agent_js_1 = require("../base-team-agent.js");
-class BackendEngineerAgent extends base_team_agent_js_1.BaseTeamAgent {
+import { BaseTeamAgent } from '../base-team-agent.js';
+export class BackendEngineerAgent extends BaseTeamAgent {
     constructor(memory, tools, messageBus) {
         const profile = {
             id: 'backend-engineer-agent',
@@ -760,5 +757,4 @@ export function validationErrorResponse(errors: unknown) {
         return utils;
     }
 }
-exports.BackendEngineerAgent = BackendEngineerAgent;
 //# sourceMappingURL=backend-engineer.js.map
