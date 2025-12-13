@@ -26,7 +26,7 @@ import { ProductManagerAgent } from './team/product-manager.js';
 import { ArchitectAgent } from './team/architect.js';
 import { DesignerAgent } from './team/designer.js';
 import { FrontendEngineerAgent } from './team/frontend-engineer.js';
-import { BackendEngineerAgent } from './team/backend-engineer.js';
+import { BackendEngineerAgent, BackendOutput } from './team/backend-engineer.js';
 import { QAEngineerAgent, QAReport } from './team/qa-engineer.js';
 import { SecurityAgent, SecurityReport } from './team/security-agent.js';
 import { MemoryManager, createMemoryManager } from '../memory/memory-manager.js';
@@ -254,8 +254,20 @@ export class TeamOrchestrator extends EventEmitter {
 
       // Merge backend files if available
       if (backendOutput) {
+        // Add Prisma schema as a ProjectFile
+        const schemaFile: ProjectFile = {
+          path: 'prisma/schema.prisma',
+          content: backendOutput.schema,
+          type: 'prisma',
+          createdBy: 'backend-engineer-agent',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          version: 1,
+        };
+        
         files = [
           ...files,
+          schemaFile,
           ...backendOutput.apiRoutes,
           ...backendOutput.middleware,
           ...backendOutput.utils,
