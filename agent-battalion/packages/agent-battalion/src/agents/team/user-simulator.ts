@@ -254,8 +254,8 @@ Generate NOW (code only):`;
   try {
     const page = await browser.newPage();
     
-    console.log('Navigating to ${appUrl}...');
-    await page.goto('${appUrl}', { waitUntil: 'networkidle0', timeout: 30000 });
+    console.log(\`Navigating to ${appUrl}...\`);
+    await page.goto(\`${appUrl}\`, { waitUntil: 'networkidle0', timeout: 30000 });
     console.log('✓ Page loaded successfully');
     
     // Get page title
@@ -270,7 +270,7 @@ Generate NOW (code only):`;
     console.log(\`✓ Found links: \${hasLinks}\`);
     
     console.log('✓ Basic simulation complete');
-    console.log('Goal: ${goal}');
+    console.log(\`Goal: ${goal}\`);
     
   } catch (error) {
     console.error('✗ Simulation error:', error.message);

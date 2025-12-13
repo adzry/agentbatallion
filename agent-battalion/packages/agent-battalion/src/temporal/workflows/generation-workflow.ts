@@ -77,12 +77,15 @@ export async function generationWorkflow(input: GenerationWorkflowInput): Promis
   try {
     // Phase 0: Rapid UI Preview (Nano Banana - runs in parallel)
     // Start UI preview generation immediately for instant visual feedback
-    const uiPreviewPromise = acts.generateUiPreview({
+    acts.generateUiPreview({
       request: input.userRequest,
+    }).then((previewResult) => {
+      if (previewResult.success) {
+        console.log('[Nano Banana] UI preview generated:', previewResult.preview.slice(0, 100) + '...');
+      }
     }).catch((error) => {
       // Don't fail the whole workflow if preview fails
       console.warn('UI preview failed:', error);
-      return { success: false, preview: '', error: error.message };
     });
 
     // Phase 1: Requirements Analysis (runs in parallel with UI preview)
@@ -90,13 +93,6 @@ export async function generationWorkflow(input: GenerationWorkflowInput): Promis
       input.projectId,
       input.userRequest
     );
-
-    // Log UI preview result when ready
-    uiPreviewPromise.then((previewResult) => {
-      if (previewResult.success) {
-        console.log('[Nano Banana] UI preview generated:', previewResult.preview.slice(0, 100) + '...');
-      }
-    });
 
     if (cancelled) throw new Error('Workflow cancelled');
 
