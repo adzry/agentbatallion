@@ -176,3 +176,7 @@ export type { SecurityAuditInput, SecurityAuditResult } from './security-audit.j
 // Export Knowledge Harvest activity (Phase 6: Overmind)
 export { harvestKnowledge } from './knowledge-harvest.js';
 export type { KnowledgeHarvestInput, KnowledgeHarvestResult } from './knowledge-harvest.js';
+
+// Export Voice activities (Phase 7: Project Siren)
+export { generateAudioSummary, processVoiceCommand } from './daily-standup.js';
+export type { StandupInput, StandupResult } from './daily-standup.js';

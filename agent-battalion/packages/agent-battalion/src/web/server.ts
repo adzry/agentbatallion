@@ -68,6 +68,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../../public')));
 
+// Import voice activity (Phase 7: Project Siren)
+import { generateAudioSummary, processVoiceCommand } from '../temporal/activities/daily-standup.js';
+
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ 
@@ -133,6 +136,53 @@ app.get('/api/project/:projectId', (req: Request, res: Response) => {
     context: project.context,
     createdAt: project.createdAt,
   });
+});
+
+// Voice command endpoint (Phase 7: Project Siren)
+app.post('/api/mission/:id/voice-command', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  
+  // In production, handle multipart/form-data for audio file
+  // For now, expect JSON with audioBuffer as base64
+  const audioBuffer = req.body.audioBuffer 
+    ? Buffer.from(req.body.audioBuffer, 'base64')
+    : Buffer.from('mock audio');
+
+  try {
+    const result = await processVoiceCommand({ missionId: id, audioBuffer });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Voice processing failed' 
+    });
+  }
+});
+
+// Audio summary endpoint (Phase 7: Project Siren)
+app.get('/api/mission/:id/audio-summary', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const project = projectStore.get(id);
+
+  if (!project) {
+    res.status(404).json({ error: 'Mission not found' });
+    return;
+  }
+
+  try {
+    const result = await generateAudioSummary({
+      missionId: id,
+      status: 'in-progress',
+      progress: 75,
+      issues: [],
+    });
+    
+    // In production, stream audio buffer
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Audio generation failed' 
+    });
+  }
 });
 
 // WebSocket connection handling

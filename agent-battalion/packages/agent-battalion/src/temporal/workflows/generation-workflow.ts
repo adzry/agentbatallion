@@ -50,6 +50,7 @@ export interface GenerationWorkflowOutput {
 // Signals
 export const feedbackSignal = defineSignal<[{ approved: boolean; comment?: string; modifications?: string }]>('feedback');
 export const cancelSignal = defineSignal('cancel');
+export const forkMissionSignal = defineSignal<[string]>('forkMission'); // Phase 9: Chronos
 
 /**
  * Main Generation Workflow
@@ -63,6 +64,7 @@ export async function generationWorkflow(input: GenerationWorkflowInput): Promis
   let cancelled = false;
   let awaitingFeedback = false;
   let feedbackResponse: { approved: boolean; comment?: string; modifications?: string } | null = null;
+  let forkRequests: string[] = []; // Phase 9: Chronos
 
   // Set up signal handlers
   setHandler(feedbackSignal, (response) => {
@@ -72,6 +74,12 @@ export async function generationWorkflow(input: GenerationWorkflowInput): Promis
 
   setHandler(cancelSignal, () => {
     cancelled = true;
+  });
+
+  // Phase 9: Chronos - Fork mission signal handler
+  setHandler(forkMissionSignal, (newRequirement: string) => {
+    forkRequests.push(newRequirement);
+    console.log(`[Chronos] Fork requested: ${newRequirement}`);
   });
 
   try {
