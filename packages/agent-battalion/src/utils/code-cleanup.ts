@@ -3,6 +3,8 @@
  * 
  * Post-processes generated code to fix common issues
  * and improve quality scores
+ * 
+ * Safe, deterministic, and QA-aligned without corrupting valid TypeScript or TSX
  */
 
 export interface CleanupResult {
@@ -10,73 +12,147 @@ export interface CleanupResult {
   fixes: string[];
 }
 
+export interface CleanupOptions {
+  removeConsole?: boolean;
+  addIconButtonAriaLabel?: boolean;
+  defaultIconButtonLabel?: string;
+}
+
 /**
- * Clean up TypeScript/React code
+ * Clean up TSX/JSX code (React components)
  */
-export function cleanupTSX(code: string): CleanupResult {
+export function cleanupTSX(code: string, options?: CleanupOptions): CleanupResult {
+  const opts: Required<CleanupOptions> = {
+    removeConsole: options?.removeConsole ?? true,
+    addIconButtonAriaLabel: options?.addIconButtonAriaLabel ?? true,
+    defaultIconButtonLabel: options?.defaultIconButtonLabel ?? 'Icon button',
+  };
+
   const fixes: string[] = [];
   let cleaned = code;
 
-  // Fix button type attributes
-  if (/<button(?![^>]*type=)/.test(cleaned)) {
+  // 1. Button type safety - Add type="button" only if missing
+  const buttonMatches = cleaned.match(/<button(?![^>]*type=)([^>]*)>/g);
+  if (buttonMatches && buttonMatches.length > 0) {
     cleaned = cleaned.replace(
       /<button(?![^>]*type=)([^>]*)>/g,
       '<button type="button"$1>'
     );
-    fixes.push('Added type="button" to buttons');
+    fixes.push(`Added type="button" to ${buttonMatches.length} button(s)`);
   }
 
-  // Fix img alt attributes
-  if (/<img(?![^>]*alt=)/.test(cleaned)) {
+  // 2. Image accessibility - Add alt="" only if missing
+  const imgMatches = cleaned.match(/<img(?![^>]*alt=)([^>]*)>/g);
+  if (imgMatches && imgMatches.length > 0) {
     cleaned = cleaned.replace(
       /<img(?![^>]*alt=)([^>]*)>/g,
       '<img alt=""$1>'
     );
-    fixes.push('Added alt="" to images');
+    fixes.push(`Added alt="" to ${imgMatches.length} image(s)`);
   }
 
-  // Add aria-label to icon-only buttons
-  const iconButtonRegex = /<button([^>]*)>(\s*<(?:svg|Icon|span[^>]*icon)[^>]*\/?>[\s\S]*?)<\/button>/g;
-  if (iconButtonRegex.test(cleaned)) {
-    cleaned = cleaned.replace(iconButtonRegex, (match, attrs, content) => {
-      if (!attrs.includes('aria-label')) {
-        return `<button aria-label="button"${attrs}>${content}</button>`;
+  // 3. Icon-only buttons - Add aria-label conservatively
+  if (opts.addIconButtonAriaLabel) {
+    // Match buttons that contain only SVG/icon elements and no visible text
+    // This is conservative - only matches simple cases
+    const iconOnlyPattern = /<button([^>]*)>([\s\n]*<(?:svg|Icon)[^>]*(?:\/>|>[\s\S]*?<\/(?:svg|Icon)>)[\s\n]*)<\/button>/g;
+    let match;
+    let addedLabels = 0;
+    const matches: Array<{ original: string; attrs: string; content: string }> = [];
+    
+    // Collect all matches first to avoid infinite loop
+    while ((match = iconOnlyPattern.exec(cleaned)) !== null) {
+      matches.push({ original: match[0], attrs: match[1], content: match[2] });
+    }
+    
+    for (const m of matches) {
+      // Only add if no aria-label or aria-labelledby exists
+      if (!m.attrs.includes('aria-label') && !m.attrs.includes('aria-labelledby')) {
+        const replacement = `<button aria-label="${opts.defaultIconButtonLabel}"${m.attrs}>${m.content}</button>`;
+        cleaned = cleaned.replace(m.original, replacement);
+        addedLabels++;
       }
-      return match;
-    });
-    fixes.push('Added aria-label to icon buttons');
+    }
+    
+    if (addedLabels > 0) {
+      fixes.push(`Added aria-label to ${addedLabels} icon-only button(s)`);
+    }
   }
 
-  // Remove console.log statements
-  if (/console\.log\(/.test(cleaned)) {
-    cleaned = cleaned.replace(/^\s*console\.log\([^)]*\);?\s*$/gm, '');
-    fixes.push('Removed console.log statements');
+  // 4. Console statement removal (single-line only, TSX/JSX)
+  if (opts.removeConsole) {
+    const consolePattern = /^\s*console\.(log|debug|info|warn|error)\([^)]*\);?\s*$/gm;
+    const consoleMatches = cleaned.match(consolePattern);
+    if (consoleMatches && consoleMatches.length > 0) {
+      cleaned = cleaned.replace(consolePattern, '');
+      fixes.push(`Removed ${consoleMatches.length} console statement(s)`);
+    }
   }
 
-  // Fix empty className strings
-  cleaned = cleaned.replace(/className=""/g, '');
+  // 5. ClassName normalization (safe)
+  // Remove empty className attributes
+  const emptyClassMatches = cleaned.match(/className=""/g);
+  if (emptyClassMatches && emptyClassMatches.length > 0) {
+    cleaned = cleaned.replace(/className=""/g, '');
+    fixes.push(`Removed ${emptyClassMatches.length} empty className attribute(s)`);
+  }
   
-  // Fix multiple spaces in className
+  // Normalize whitespace inside className (preserve content)
   cleaned = cleaned.replace(/className="([^"]*)"/g, (match, classes) => {
-    const cleaned = classes.replace(/\s+/g, ' ').trim();
-    return cleaned ? `className="${cleaned}"` : '';
+    const normalized = classes.replace(/\s+/g, ' ').trim();
+    return normalized ? `className="${normalized}"` : '';
   });
 
-  // Ensure proper key prop in arrays (basic pattern)
-  // This is a simple heuristic, not a full fix
-  if (/\.map\([^)]*\)\s*=>/g.test(cleaned) && !cleaned.includes('key=')) {
-    fixes.push('Warning: Missing key prop detected in .map()');
+  // 6. Markdown cleanup - Strip leading/trailing code fences
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:tsx|typescript|javascript|jsx)?\n?/, '');
+    fixes.push('Removed leading code fence');
+  }
+  if (cleaned.endsWith('```')) {
+    cleaned = cleaned.replace(/```$/, '');
+    fixes.push('Removed trailing code fence');
   }
 
-  // Fix common quotes issues
-  cleaned = cleaned.replace(/className='/g, 'className="');
-  cleaned = cleaned.replace(/'>/g, '">');
+  // 7. Whitespace cleanup - Trim trailing whitespace per line
+  cleaned = cleaned.split('\n').map(line => line.trimEnd()).join('\n').trim();
 
-  // Remove markdown code blocks if present
-  cleaned = cleaned.replace(/^```(?:tsx|typescript|javascript|jsx)?\n?/gm, '');
-  cleaned = cleaned.replace(/```$/gm, '');
+  return { code: cleaned, fixes };
+}
 
-  // Trim and remove trailing whitespace
+/**
+ * Clean up TS/JS code (non-JSX)
+ */
+export function cleanupTS(code: string, options?: CleanupOptions): CleanupResult {
+  const opts: Required<CleanupOptions> = {
+    removeConsole: options?.removeConsole ?? false,
+    addIconButtonAriaLabel: false, // Never for non-JSX
+    defaultIconButtonLabel: '',
+  };
+
+  const fixes: string[] = [];
+  let cleaned = code;
+
+  // 1. Console statement removal (opt-in only for TS/JS)
+  if (opts.removeConsole) {
+    const consolePattern = /^\s*console\.(log|debug|info|warn|error)\([^)]*\);?\s*$/gm;
+    const consoleMatches = cleaned.match(consolePattern);
+    if (consoleMatches && consoleMatches.length > 0) {
+      cleaned = cleaned.replace(consolePattern, '');
+      fixes.push(`Removed ${consoleMatches.length} console statement(s)`);
+    }
+  }
+
+  // 2. Markdown cleanup - Strip leading/trailing code fences
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:ts|typescript|javascript|js)?\n?/, '');
+    fixes.push('Removed leading code fence');
+  }
+  if (cleaned.endsWith('```')) {
+    cleaned = cleaned.replace(/```$/, '');
+    fixes.push('Removed trailing code fence');
+  }
+
+  // 3. Whitespace cleanup - Trim trailing whitespace per line
   cleaned = cleaned.split('\n').map(line => line.trimEnd()).join('\n').trim();
 
   return { code: cleaned, fixes };
@@ -89,16 +165,18 @@ export function cleanupCSS(code: string): CleanupResult {
   const fixes: string[] = [];
   let cleaned = code;
 
-  // Remove !important where possible (just flag it)
-  if (/!important/.test(cleaned)) {
-    fixes.push('Warning: !important usage detected - consider refactoring');
+  // Remove markdown code fences
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:css)?\n?/, '');
+    fixes.push('Removed leading code fence');
+  }
+  if (cleaned.endsWith('```')) {
+    cleaned = cleaned.replace(/```$/, '');
+    fixes.push('Removed trailing code fence');
   }
 
-  // Fix empty rule blocks
-  cleaned = cleaned.replace(/[^{}]+\{\s*\}/g, '');
-  if (cleaned !== code) {
-    fixes.push('Removed empty CSS rule blocks');
-  }
+  // Trim trailing whitespace per line
+  cleaned = cleaned.split('\n').map(line => line.trimEnd()).join('\n').trim();
 
   return { code: cleaned, fixes };
 }
@@ -110,6 +188,16 @@ export function cleanupJSON(code: string): CleanupResult {
   const fixes: string[] = [];
   let cleaned = code;
 
+  // Remove markdown code fences
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\n?/, '');
+    fixes.push('Removed leading code fence');
+  }
+  if (cleaned.endsWith('```')) {
+    cleaned = cleaned.replace(/```$/, '');
+    fixes.push('Removed trailing code fence');
+  }
+
   try {
     // Parse and re-stringify to fix formatting
     const parsed = JSON.parse(cleaned);
@@ -117,7 +205,7 @@ export function cleanupJSON(code: string): CleanupResult {
     fixes.push('Formatted JSON');
   } catch {
     // JSON is invalid, leave as is
-    fixes.push('Warning: Invalid JSON detected');
+    // Don't add a fix message unless we actually changed something
   }
 
   return { code: cleaned, fixes };
@@ -126,20 +214,28 @@ export function cleanupJSON(code: string): CleanupResult {
 /**
  * Apply cleanup based on file extension
  */
-export function cleanupCode(code: string, filePath: string): CleanupResult {
+export function cleanupCode(code: string, filePath: string, options?: CleanupOptions): CleanupResult {
   const ext = filePath.split('.').pop()?.toLowerCase();
 
   switch (ext) {
     case 'tsx':
-    case 'ts':
     case 'jsx':
+      // TSX/JSX files get full JSX cleanup with default options
+      return cleanupTSX(code, options);
+    
+    case 'ts':
     case 'js':
-      return cleanupTSX(code);
+      // TS/JS files get non-JSX cleanup (no console removal by default)
+      return cleanupTS(code, options);
+    
     case 'css':
       return cleanupCSS(code);
+    
     case 'json':
       return cleanupJSON(code);
+    
     default:
+      // Unknown file types are left unchanged
       return { code, fixes: [] };
   }
 }

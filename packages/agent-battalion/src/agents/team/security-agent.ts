@@ -64,7 +64,7 @@ export class SecurityAgent extends BaseTeamAgent {
     const profile: AgentProfile = {
       id: 'security-agent',
       name: 'Casey',
-      role: 'devops_engineer', // Using devops as closest role
+      role: 'devops_engineer',
       avatar: '🔐',
       description: 'Security Engineer - Ensures application security',
       capabilities: {

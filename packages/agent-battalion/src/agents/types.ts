@@ -169,6 +169,13 @@ export interface ProjectContext {
   designSystem?: DesignSystem;
   techStack: TechStack;
   files: ProjectFile[];
+  backend?: {
+    schema?: string;
+    apiRoutes?: ProjectFile[];
+    middleware?: ProjectFile[];
+    utils?: ProjectFile[];
+  };
+  securityReport?: any;
   status: ProjectStatus;
   createdAt: Date;
   updatedAt: Date;

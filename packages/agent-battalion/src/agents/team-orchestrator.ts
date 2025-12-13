@@ -26,7 +26,9 @@ import { ProductManagerAgent } from './team/product-manager.js';
 import { ArchitectAgent } from './team/architect.js';
 import { DesignerAgent } from './team/designer.js';
 import { FrontendEngineerAgent } from './team/frontend-engineer.js';
+import { BackendEngineerAgent, BackendOutput } from './team/backend-engineer.js';
 import { QAEngineerAgent, QAReport } from './team/qa-engineer.js';
+import { SecurityAgent, SecurityReport } from './team/security-agent.js';
 import { MemoryManager, createMemoryManager } from '../memory/memory-manager.js';
 import { ToolRegistry, createToolRegistry } from '../tools/tool-registry.js';
 import { MessageBus, createMessageBus } from '../communication/message-bus.js';
@@ -37,6 +39,13 @@ export interface OrchestrationResult {
   success: boolean;
   files: ProjectFile[];
   qaReport?: QAReport;
+  securityReport?: SecurityReport;
+  backend?: {
+    schema?: string;
+    apiRoutes?: ProjectFile[];
+    middleware?: ProjectFile[];
+    utils?: ProjectFile[];
+  };
   duration: number;
   iterations: number;
   events: TeamEvent[];
@@ -72,7 +81,9 @@ export class TeamOrchestrator extends EventEmitter {
         'architect',
         'designer',
         'frontend_engineer',
+        'backend_engineer',
         'qa_engineer',
+        'devops_engineer',
       ],
       workflowType: config?.workflowType || 'agile',
       maxIterations: config?.maxIterations || 3,
@@ -113,8 +124,16 @@ export class TeamOrchestrator extends EventEmitter {
       this.agents.set('frontend_engineer', new FrontendEngineerAgent(this.memory, this.tools, this.messageBus));
     }
 
+    if (enabledRoles.includes('backend_engineer')) {
+      this.agents.set('backend_engineer', new BackendEngineerAgent(this.memory, this.tools, this.messageBus));
+    }
+
     if (enabledRoles.includes('qa_engineer')) {
       this.agents.set('qa_engineer', new QAEngineerAgent(this.memory, this.tools, this.messageBus));
+    }
+
+    if (enabledRoles.includes('devops_engineer')) {
+      this.agents.set('devops_engineer', new SecurityAgent(this.memory, this.tools, this.messageBus));
     }
   }
 
@@ -194,7 +213,34 @@ export class TeamOrchestrator extends EventEmitter {
 
       await this.memory.store('design_system', 'current', designSystem);
 
-      this.emitProgress('design', 'designer', '🎨', 'Design system complete', 45);
+      this.emitProgress('design', 'designer', '🎨', 'Design system complete', 40);
+
+      // Phase 3.5: Backend Engineer - Generate Backend Code
+      let backendOutput;
+      if (this.agents.has('backend_engineer')) {
+        this.emitProgress('backend', 'backend_engineer', '🗄️', 'Generating backend code...', 42);
+        const backendAgent = this.agents.get('backend_engineer') as BackendEngineerAgent;
+        
+        // Extract data models from requirements or use empty array
+        const dataModels = requirements
+          .filter((req: any) => req.dataModel)
+          .map((req: any) => req.dataModel);
+        
+        backendOutput = await backendAgent.generateBackend(
+          requirements,
+          dataModels,
+          architecture
+        );
+
+        await this.memory.store('backend', 'current', backendOutput);
+
+        // Store backend output in project context
+        if (this.projectContext) {
+          this.projectContext.backend = backendOutput;
+        }
+
+        this.emitProgress('backend', 'backend_engineer', '🗄️', 'Backend generation complete', 45);
+      }
 
       // Phase 4: Frontend Engineer - Generate Code
       this.emitProgress('development', 'frontend_engineer', '💻', 'Writing code...', 50);
@@ -206,18 +252,77 @@ export class TeamOrchestrator extends EventEmitter {
         fileStructure
       );
 
+      // Merge backend files if available
+      if (backendOutput) {
+        // Add Prisma schema as a ProjectFile
+        const schemaFile: ProjectFile = {
+          path: 'prisma/schema.prisma',
+          content: backendOutput.schema,
+          type: 'prisma',
+          createdBy: 'backend-engineer-agent',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          version: 1,
+        };
+        
+        files = [
+          ...files,
+          schemaFile,
+          ...backendOutput.apiRoutes,
+          ...backendOutput.middleware,
+          ...backendOutput.utils,
+        ];
+      }
+
       await this.memory.store('files', 'current', files);
 
-      this.emitProgress('development', 'frontend_engineer', '💻', `Generated ${files.length} files`, 70);
+      this.emitProgress('development', 'frontend_engineer', '💻', `Generated ${files.length} files`, 65);
 
       // Phase 4.5: Post-process and cleanup generated code
-      this.emitProgress('cleanup', 'frontend_engineer', '🧹', 'Cleaning up generated code...', 73);
+      this.emitProgress('cleanup', 'frontend_engineer', '🧹', 'Cleaning up generated code...', 68);
       files = this.cleanupGeneratedFiles(files);
       await this.memory.store('files', 'current', files);
 
-      this.emitProgress('development', 'frontend_engineer', '💻', `Code cleanup complete`, 75);
+      this.emitProgress('development', 'frontend_engineer', '💻', `Code cleanup complete`, 70);
 
-      // Phase 5: QA Engineer - Review & Test
+      // Phase 4.7: Security Agent - Security Review (REAL GATE)
+      let securityReport;
+      if (this.agents.has('devops_engineer')) {
+        this.emitProgress('security', 'devops_engineer', '🔐', 'Running security audit...', 77);
+        const securityAgent = this.agents.get('devops_engineer') as SecurityAgent;
+        securityReport = await securityAgent.auditSecurity(files);
+
+        await this.memory.store('security_report', 'current', securityReport);
+
+        // Store security report in project context
+        if (this.projectContext) {
+          this.projectContext.securityReport = securityReport;
+        }
+
+        this.emitProgress('security', 'devops_engineer', '🔐', `Security score ${securityReport.score}/100 (${securityReport.grade})`, 79);
+
+        // REAL SECURITY GATE: Fail if critical > 0 OR grade in (D, F) OR score < 70
+        const failsGate = 
+          securityReport.summary.critical > 0 ||
+          securityReport.grade === 'D' ||
+          securityReport.grade === 'F' ||
+          securityReport.score < 70;
+
+        if (failsGate) {
+          const errorMsg = `Security gate failed: Score ${securityReport.score}/100 (${securityReport.grade}), ${securityReport.summary.critical} critical issue(s)`;
+          this.emitProgress('error', 'devops_engineer', '🔐', errorMsg, 0);
+          
+          throw new Error(
+            `${errorMsg}\n` +
+            securityReport.issues
+              .filter((issue: any) => issue.severity === 'critical' || issue.severity === 'high')
+              .map((issue: any) => `  - ${issue.title}: ${issue.description}`)
+              .join('\n')
+          );
+        }
+      }
+
+      // Phase 5: QA Engineer - Review & Test (REAL GATE)
       let qaReport: QAReport | undefined;
       let passed = false;
 
@@ -233,9 +338,16 @@ export class TeamOrchestrator extends EventEmitter {
         if (!passed && iterations < this.config.maxIterations) {
           this.emitProgress('fixing', 'frontend_engineer', '💻', 'Applying fixes...', 85);
           // In a real implementation, we would fix the issues here
-          // For now, we'll accept the result
-          passed = true;
+          // For now, we continue to next iteration
         }
+      }
+
+      // REAL QA GATE: Fail if quality threshold not met after max iterations
+      if (!passed) {
+        const errorMsg = `QA gate failed: Quality threshold (${this.config.qualityThreshold}) not met after ${this.config.maxIterations} iteration(s). Score: ${qaReport?.score || 0}`;
+        this.emitProgress('error', 'qa_engineer', '🔍', errorMsg, 0);
+        
+        throw new Error(errorMsg);
       }
 
       this.emitProgress('complete', 'system', '✅', 'Project generation complete!', 100);
@@ -249,6 +361,8 @@ export class TeamOrchestrator extends EventEmitter {
         success: true,
         files,
         qaReport,
+        securityReport,
+        backend: backendOutput,
         duration: Date.now() - startTime,
         iterations,
         events: this.events,
