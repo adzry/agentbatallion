@@ -164,3 +164,7 @@ export type { VisualQAInput, VisualQAResult } from './visual-qa.js';
 // Export User Simulation activity (Phase 3: Dynamic Swarm)
 export { simulateUser } from './user-simulation.js';
 export type { UserSimulationInput, UserSimulationResult } from './user-simulation.js';
+
+// Export Repair activity (Phase 4: Lazarus Protocol)
+export { attemptRepair } from './repair.js';
+export type { RepairInput, RepairResult } from './repair.js';
