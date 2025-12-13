@@ -331,6 +331,162 @@ const puppeteer = require('puppeteer');
   }
 
   /**
+   * Execute attack script for security testing (Phase 5: Red Sparrow)
+   */
+  async executeAttackScript(url: string, payload: string, target: string): Promise<{
+    success: boolean;
+    vulnerable: boolean;
+    logs: string[];
+    error?: string;
+  }> {
+    if (this.mockMode) {
+      console.log(`[E2B Mock] Executing attack on ${url}`);
+      return {
+        success: true,
+        vulnerable: false,
+        logs: ['Mock attack executed', 'No vulnerabilities detected'],
+      };
+    }
+
+    if (!this.isConnected) {
+      throw new Error('Sandbox not connected. Call connect() first.');
+    }
+
+    const scriptPath = '/tmp/attack-script.js';
+    const logs: string[] = [];
+
+    try {
+      // Check if puppeteer is installed
+      const checkResult = await this.execute('npm list puppeteer');
+      
+      if (!checkResult.success || checkResult.exitCode !== 0) {
+        console.log('[E2B] Installing puppeteer for attack testing...');
+        const installResult = await this.execute('npm install puppeteer');
+        if (!installResult.success) {
+          throw new Error('Failed to install puppeteer: ' + installResult.stderr);
+        }
+      }
+
+      // Create attack script
+      const attackScript = `
+const puppeteer = require('puppeteer');
+
+(async () => {
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+  
+  try {
+    const page = await browser.newPage();
+    
+    // Set up console logging
+    page.on('console', msg => {
+      console.log('BROWSER_CONSOLE:', msg.text());
+    });
+    
+    // Set up dialog handler for alert() detection
+    let alertDetected = false;
+    page.on('dialog', async dialog => {
+      console.log('ALERT_DETECTED:', dialog.message());
+      alertDetected = true;
+      await dialog.accept();
+    });
+    
+    console.log('Navigating to ${url}...');
+    await page.goto('${url}', { waitUntil: 'networkidle0', timeout: 30000 });
+    console.log('Page loaded');
+    
+    // Find target element and inject payload
+    console.log('Looking for target: ${target}');
+    const targetExists = await page.$('${target}');
+    
+    if (!targetExists) {
+      console.log('Target element not found, trying common inputs');
+      // Try common input types
+      const input = await page.$('input[type="text"]') || 
+                     await page.$('textarea') ||
+                     await page.$('input');
+      
+      if (input) {
+        console.log('Found input element, injecting payload');
+        await input.type(\`${payload.replace(/'/g, "\\'")}\`);
+        
+        // Try to submit
+        const submitBtn = await page.$('button[type="submit"]') || 
+                          await page.$('button');
+        if (submitBtn) {
+          await submitBtn.click();
+          await page.waitForTimeout(2000);
+        }
+      } else {
+        console.log('No suitable input elements found');
+      }
+    } else {
+      console.log('Target found, injecting payload');
+      await page.type('${target}', \`${payload.replace(/'/g, "\\'")}\`);
+      
+      // Try to trigger
+      await page.evaluate(() => {
+        const forms = document.querySelectorAll('form');
+        if (forms.length > 0) {
+          forms[0].dispatchEvent(new Event('submit'));
+        }
+      });
+      
+      await page.waitForTimeout(2000);
+    }
+    
+    // Check if alert was triggered (indicates XSS vulnerability)
+    if (alertDetected) {
+      console.log('VULNERABILITY_DETECTED: XSS vulnerability confirmed');
+      process.exit(10); // Special exit code for vulnerability
+    }
+    
+    console.log('No vulnerability detected');
+    
+  } catch (error) {
+    console.error('Attack script error:', error.message);
+    process.exit(1);
+  } finally {
+    await browser.close();
+  }
+})();
+`;
+
+      // Write and execute the attack script
+      await this.sandbox.filesystem.write(scriptPath, attackScript);
+      
+      const execResult = await this.execute(`node ${scriptPath}`);
+      logs.push(execResult.stdout);
+      
+      // Check if vulnerability was detected (exit code 10)
+      const vulnerable = execResult.exitCode === 10 || 
+                        execResult.stdout.includes('VULNERABILITY_DETECTED') ||
+                        execResult.stdout.includes('ALERT_DETECTED');
+
+      // Cleanup
+      await this.execute(`rm ${scriptPath}`).catch(() => {
+        // Ignore cleanup errors
+      });
+
+      return {
+        success: true,
+        vulnerable,
+        logs,
+      };
+    } catch (error) {
+      console.error('[E2B] Attack script failed:', error);
+      return {
+        success: false,
+        vulnerable: false,
+        logs,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
    * Deploy the generated application
    */
   async deployProject(

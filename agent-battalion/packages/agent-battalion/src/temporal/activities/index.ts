@@ -168,3 +168,7 @@ export type { UserSimulationInput, UserSimulationResult } from './user-simulatio
 // Export Repair activity (Phase 4: Lazarus Protocol)
 export { attemptRepair } from './repair.js';
 export type { RepairInput, RepairResult } from './repair.js';
+
+// Export Security Audit activity (Phase 5: Red Sparrow)
+export { performSecurityAudit } from './security-audit.js';
+export type { SecurityAuditInput, SecurityAuditResult } from './security-audit.js';
