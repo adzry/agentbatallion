@@ -37,10 +37,10 @@ describe('TeamOrchestrator', () => {
       expect(agents.length).toBeGreaterThan(0);
     });
 
-    it('should have default 5 agents', () => {
+    it('should have default 7 agents', () => {
       const agents = orchestrator.getAllAgents();
       
-      expect(agents.length).toBe(5);
+      expect(agents.length).toBe(7);
     });
   });
 
