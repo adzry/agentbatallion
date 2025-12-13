@@ -24,6 +24,7 @@ import {
   OrchestrationProgress,
   ProjectFile,
 } from '../agents/index.js';
+import { createAppPipeline } from '../orchestration/pipeline/createAppPipeline.js';
 
 // Types
 interface GenerationRequest {
@@ -317,6 +318,76 @@ io.on('connection', (socket: Socket) => {
         message: error instanceof Error ? error.message : 'Unknown error occurred',
       });
       activeOrchestrators.delete(projectId);
+    }
+  });
+
+  // Start generation with new pipeline (experimental)
+  socket.on('generate:pipeline', async (data: GenerationRequest) => {
+    const { prompt, projectName } = data;
+    const projectId = uuidv4();
+
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`Starting PIPELINE generation for project: ${projectId}`);
+    console.log(`Prompt: ${prompt}`);
+    console.log(`${'='.repeat(60)}\n`);
+
+    try {
+      // Emit initial progress
+      socket.emit('generation:progress', {
+        projectId,
+        phase: 'initialization',
+        agent: 'system',
+        agentAvatar: '🚀',
+        message: 'Initializing contract-based pipeline...',
+        progress: 5,
+      });
+
+      // Run the new pipeline
+      const result = await createAppPipeline({
+        prompt,
+        projectName: projectName || 'My App',
+        outputDir: './generated-app',
+        maxRepairAttempts: 3,
+      });
+
+      if (result.success) {
+        // For now, we don't have actual files from the pipeline
+        // Store artifact metadata
+        projectStore.set(projectId, {
+          files: [], // TODO: Convert artifacts to files when implementation is complete
+          context: { 
+            runId: result.runId,
+            artifacts: Array.from(result.artifacts.keys()),
+            manifest: result.manifest,
+          },
+          createdAt: new Date(),
+        });
+
+        // Send completion
+        socket.emit('generation:complete', {
+          projectId,
+          downloadUrl: `/api/download/${projectId}`,
+          files: [],
+          artifacts: Array.from(result.artifacts.keys()),
+          runId: result.runId,
+        });
+
+        console.log(`\n✅ Pipeline ${projectId} completed`);
+        console.log(`   Run ID: ${result.runId}`);
+        console.log(`   Artifacts: ${result.artifacts.size}`);
+      } else {
+        socket.emit('generation:error', {
+          projectId,
+          message: result.error || 'Pipeline failed',
+        });
+      }
+
+    } catch (error) {
+      console.error('Pipeline generation error:', error);
+      socket.emit('generation:error', {
+        projectId,
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
     }
   });
 

@@ -12,6 +12,7 @@
 import { program } from 'commander';
 import { createTeamOrchestrator } from '../agents/team-orchestrator.js';
 import { createLLMService } from '../llm/llm-service.js';
+import { createAppPipeline } from '../orchestration/pipeline/createAppPipeline.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -181,6 +182,79 @@ async function createProject(prompt: string, options: {
   }
 }
 
+// Create project using new pipeline
+async function createProjectWithPipeline(prompt: string, options: {
+  output?: string;
+  name?: string;
+}) {
+  showBanner();
+  
+  const outputDir = options.output || './generated-app';
+  const projectName = options.name || 'my-app';
+  
+  log(`📝 Prompt: "${prompt}"`, 'cyan');
+  log(`📁 Output: ${path.resolve(outputDir)}`, 'dim');
+  log(`🔄 Using: Contract-based pipeline (experimental)`, 'yellow');
+  console.log('');
+  log('─'.repeat(60), 'dim');
+  console.log('');
+
+  try {
+    const startTime = Date.now();
+    
+    // Run the new pipeline
+    const result = await createAppPipeline({
+      prompt,
+      projectName,
+      outputDir,
+      maxRepairAttempts: 3,
+    });
+    
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+    
+    console.log('\n');
+    
+    if (!result.success) {
+      log('❌ Pipeline failed', 'red');
+      if (result.error) {
+        log(`   Error: ${result.error}`, 'red');
+      }
+      process.exit(1);
+    }
+
+    // Summary
+    log('─'.repeat(60), 'dim');
+    console.log('');
+    log('✅ Pipeline Complete!', 'green');
+    console.log('');
+    log(`   📦 Run ID: ${result.runId}`, 'reset');
+    log(`   📊 Artifacts: ${result.artifacts.size}`, 'reset');
+    log(`   ⏱️  Duration: ${duration}s`, 'reset');
+    log(`   📂 Output: ${path.resolve(outputDir)}`, 'reset');
+    console.log('');
+    
+    log('📄 Generated artifacts:', 'cyan');
+    for (const [type] of result.artifacts) {
+      log(`   ✓ ${type}`, 'dim');
+    }
+    
+    console.log('');
+    log('🚀 Next steps:', 'yellow');
+    log(`   cd ${outputDir}`, 'dim');
+    log('   npm install', 'dim');
+    log('   npm run dev', 'dim');
+    console.log('');
+
+  } catch (error) {
+    console.log('\n');
+    log(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'red');
+    if (error instanceof Error && error.stack) {
+      log(error.stack, 'dim');
+    }
+    process.exit(1);
+  }
+}
+
 // List providers command
 function listProviders() {
   showBanner();
@@ -231,9 +305,14 @@ program
   .option('-p, --provider <provider>', 'LLM provider (anthropic, openai, google)')
   .option('--real-ai', 'Use real AI (requires API keys)')
   .option('--mock', 'Use mock/template generation')
+  .option('--use-pipeline', 'Use new contract-based pipeline (experimental)')
   .action(async (prompt, options) => {
-    const realAi = options.realAi ? true : (options.mock ? false : undefined);
-    await createProject(prompt, { ...options, realAi });
+    if (options.usePipeline) {
+      await createProjectWithPipeline(prompt, options);
+    } else {
+      const realAi = options.realAi ? true : (options.mock ? false : undefined);
+      await createProject(prompt, { ...options, realAi });
+    }
   });
 
 program
