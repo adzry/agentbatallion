@@ -75,12 +75,13 @@ export async function verifyVisuals(input: VisualQAInput): Promise<VisualQAResul
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('[Activity] Visual QA failed:', message);
     
+    // On failure, don't auto-approve - require manual review
     return {
       success: false,
       screenshotTaken: false,
-      approved: true, // Don't block on visual QA failures
-      defects: [],
-      suggestions: [],
+      approved: false,
+      defects: ['Visual QA failed - manual review required'],
+      suggestions: ['Retry visual QA or perform manual visual inspection'],
       error: message,
     };
   }
