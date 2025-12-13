@@ -4,8 +4,6 @@
  * Defines the core types for the agent team system inspired by MGX.dev
  */
 
-import { BaseMessage } from '@langchain/core/messages';
-
 // Agent Roles in the Team
 export type AgentRole = 
   | 'product_manager'
