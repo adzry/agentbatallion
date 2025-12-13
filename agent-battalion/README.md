@@ -206,10 +206,48 @@ npm run test:watch -w @meta/agent-battalion
 npm run test:coverage -w @meta/agent-battalion
 ```
 
+## 🖥️ CLI Tool
+
+Generate apps directly from the command line:
+
+```bash
+# Generate an app
+npm run cli -- create "Build a todo app" --output ./my-app
+
+# With real AI
+npm run cli -- create "Build a blog" --output ./blog --real-ai
+
+# List LLM providers
+npm run cli -- providers
+
+# Start web server
+npm run cli -- serve --port 4000
+```
+
+### CLI Options
+
+| Command | Description |
+|---------|-------------|
+| `create <prompt>` | Generate a new application |
+| `providers` | List available LLM providers |
+| `serve` | Start the web server |
+
+### Create Options
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-o, --output` | Output directory | `./generated-app` |
+| `-n, --name` | Project name | `my-app` |
+| `-p, --provider` | LLM provider | From env |
+| `--real-ai` | Use real AI | `false` |
+| `--mock` | Use mock generation | `true` |
+
 ## 📈 Roadmap
 
+- [x] CLI Tool ✅
+- [x] Unit Tests ✅
+- [x] Multi-Provider LLM ✅
 - [ ] VS Code Extension
-- [ ] CLI Tool
 - [ ] Custom Agent Creation
 - [ ] Project Templates
 - [ ] Team Collaboration
