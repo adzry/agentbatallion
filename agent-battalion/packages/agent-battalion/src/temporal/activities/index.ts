@@ -156,3 +156,7 @@ export async function startPreview(
 // Export UI Preview activity (Phase 1: Nano Banana)
 export { generateUiPreview } from './ui-preview.js';
 export type { UIPreviewInput, UIPreviewResult } from './ui-preview.js';
+
+// Export Visual QA activity (Phase 2: Eye of Sauron)
+export { verifyVisuals } from './visual-qa.js';
+export type { VisualQAInput, VisualQAResult } from './visual-qa.js';

@@ -241,6 +241,96 @@ export class E2BSandbox extends EventEmitter {
   }
 
   /**
+   * Take screenshot of running application (Phase 2: Visual QA)
+   */
+  async takeScreenshot(url: string): Promise<string> {
+    if (this.mockMode) {
+      console.log(`[E2B Mock] Taking screenshot of ${url}`);
+      // Return a placeholder base64 image for mock mode
+      return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    }
+
+    if (!this.isConnected) {
+      throw new Error('Sandbox not connected. Call connect() first.');
+    }
+
+    const screenshotPath = '/tmp/screenshot.png';
+    const scriptPath = '/tmp/take-screenshot.js';
+
+    try {
+      // Check if puppeteer is installed
+      const checkResult = await this.execute('npm list puppeteer');
+      
+      if (!checkResult.success || checkResult.exitCode !== 0) {
+        console.log('[E2B] Installing puppeteer...');
+        const installResult = await this.execute('npm install puppeteer');
+        if (!installResult.success) {
+          throw new Error('Failed to install puppeteer: ' + installResult.stderr);
+        }
+      }
+
+      // Create puppeteer screenshot script
+      const screenshotScript = `
+const puppeteer = require('puppeteer');
+
+(async () => {
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+  
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1920, height: 1080 });
+    await page.goto('${url}', { 
+      waitUntil: 'networkidle0',
+      timeout: 30000 
+    });
+    
+    // Wait a bit for any animations
+    await page.waitForTimeout(1000);
+    
+    await page.screenshot({ 
+      path: '${screenshotPath}',
+      fullPage: false 
+    });
+    
+    console.log('Screenshot saved to ${screenshotPath}');
+  } catch (error) {
+    console.error('Screenshot error:', error.message);
+    process.exit(1);
+  } finally {
+    await browser.close();
+  }
+})();
+`;
+
+      // Write the script
+      await this.sandbox.filesystem.write(scriptPath, screenshotScript);
+
+      // Execute the script
+      const execResult = await this.execute(`node ${scriptPath}`);
+      if (!execResult.success) {
+        throw new Error('Screenshot script failed: ' + execResult.stderr);
+      }
+
+      // Read the screenshot file and convert to base64
+      const imageBuffer = await this.sandbox.filesystem.read(screenshotPath);
+      const base64Image = Buffer.from(imageBuffer).toString('base64');
+
+      // Clean up
+      await this.execute(`rm ${scriptPath} ${screenshotPath}`).catch(() => {
+        // Ignore cleanup errors
+      });
+
+      return base64Image;
+    } catch (error) {
+      console.error('[E2B] Screenshot failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Deploy the generated application
    */
   async deployProject(

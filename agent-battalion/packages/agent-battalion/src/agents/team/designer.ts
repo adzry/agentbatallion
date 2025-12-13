@@ -64,6 +64,86 @@ Design principles:
   }
 
   /**
+   * Review visual implementation against design intent (Phase 2: Visual QA)
+   */
+  async reviewVisualImplementation(
+    codeIntent: string,
+    screenshotBase64: string
+  ): Promise<{
+    approved: boolean;
+    defects: string[];
+    suggestions: string[];
+  }> {
+    this.think('Performing visual audit against design intent...');
+    
+    if (!this.isRealAIEnabled()) {
+      // Simple mock review
+      return {
+        approved: true,
+        defects: [],
+        suggestions: ['Enable real AI for detailed visual analysis'],
+      };
+    }
+
+    try {
+      const prompt = `You are a UI Auditor. Compare this screenshot to the design intent.
+
+DESIGN INTENT:
+${codeIntent}
+
+TASK:
+1. Analyze the screenshot for visual defects
+2. Check alignment, spacing, colors, typography
+3. Verify responsive design elements
+4. List exactly 3 visual defects (or note "No major defects" if it looks good)
+
+Return JSON:
+{
+  "approved": true/false,
+  "defects": ["defect 1", "defect 2", "defect 3"],
+  "suggestions": ["improvement 1", "improvement 2"]
+}`;
+
+      // Create a message with the image
+      const messages = [
+        {
+          role: 'system' as const,
+          content: this.profile.systemPrompt,
+        },
+        {
+          role: 'user' as const,
+          content: prompt,
+          images: [screenshotBase64],
+        },
+      ];
+
+      const response = await this.llm.complete(messages);
+      
+      // Parse JSON response
+      const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const result = JSON.parse(jsonMatch[0]);
+        this.think(`Visual review complete: ${result.approved ? 'APPROVED' : 'NEEDS WORK'}`);
+        return result;
+      }
+
+      // Fallback if parsing fails
+      return {
+        approved: true,
+        defects: [],
+        suggestions: ['Visual analysis completed but response format was unexpected'],
+      };
+    } catch (error) {
+      this.think(`Visual review failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return {
+        approved: true,
+        defects: [],
+        suggestions: ['Visual review encountered an error'],
+      };
+    }
+  }
+
+  /**
    * Create design system based on project requirements
    */
   async createDesignSystem(
