@@ -1,42 +1,53 @@
-# Dependencies
-node_modules/
-
-# Environment files
-.env
-.env.local
-.env.*.local
 
 # Build outputs
-dist/
-build/
-.next/
-out/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-
-# Test coverage
-coverage/
-
-# Secrets (never commit)
-*.pem
-*.key
-secrets/
-
+# Cache
 # Core dumps
-core
-
+# Coverage
+# Dependencies
+# Environment
+# Environment files
+# IDE
+# Logs
+# Misc
+# OS
+# Secrets (never commit)
 # Temp files
-*.tmp
+# Test coverage
+**/dist/
+**/node_modules/
+*.core
+*.env
+*.key
+*.local
+*.log
+*.pem
+*.sublime-*
+*.swo
+*.swp
 *.temp
+*.tmp
+*.tsbuildinfo
+.DS_Store
+.cache/
+.env
+.env.*.local
+.env.local
+.eslintcache
+.idea/
+.next/
+.nyc_output/
+.parcel-cache/
+.vscode/
+Thumbs.db
+build/
+core
+coverage/
+dist/
+lerna-debug.log*
+node_modules/
+npm-debug.log*
+out/
+pnpm-debug.log*
+secrets/
+yarn-debug.log*
+yarn-error.log*
