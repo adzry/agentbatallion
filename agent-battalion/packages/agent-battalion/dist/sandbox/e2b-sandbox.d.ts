@@ -80,6 +80,19 @@ export declare class E2BSandbox extends EventEmitter {
         process: any;
     }>;
     /**
+     * Take screenshot of running application (Phase 2: Visual QA)
+     */
+    takeScreenshot(url: string): Promise<string>;
+    /**
+     * Execute attack script for security testing (Phase 5: Red Sparrow)
+     */
+    executeAttackScript(url: string, payload: string, target: string): Promise<{
+        success: boolean;
+        vulnerable: boolean;
+        logs: string[];
+        error?: string;
+    }>;
+    /**
      * Deploy the generated application
      */
     deployProject(files: SandboxFile[], options?: {

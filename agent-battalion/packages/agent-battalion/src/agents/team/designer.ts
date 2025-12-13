@@ -76,7 +76,7 @@ Design principles:
   }> {
     this.think('Performing visual audit against design intent...');
     
-    if (!this.isUsingRealAI()) {
+    if (!this.isRealAIEnabled()) {
       // Simple mock review
       return {
         approved: true,
@@ -155,7 +155,7 @@ Return JSON:
 
     let designSystem: DesignSystem;
 
-    if (this.isUsingRealAI()) {
+    if (this.isRealAIEnabled()) {
       // Use real AI for design system
       this.think('Using AI to create design system...');
       

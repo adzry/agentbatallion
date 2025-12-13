@@ -29,12 +29,8 @@ export interface GenerationWorkflowOutput {
     };
     errors?: string[];
 }
-export declare const feedbackSignal: import("@temporalio/workflow").SignalDefinition<[{
-    approved: boolean;
-    comment?: string;
-    modifications?: string;
-}], string>;
-export declare const cancelSignal: import("@temporalio/workflow").SignalDefinition<[], "cancel">;
+export declare const feedbackSignal: any;
+export declare const cancelSignal: any;
 /**
  * Main Generation Workflow
  */

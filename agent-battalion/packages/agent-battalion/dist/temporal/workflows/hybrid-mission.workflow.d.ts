@@ -4,10 +4,10 @@
  * Orchestrates the app generation process using Temporal workflows.
  * Uses the TeamOrchestrator for intelligent multi-agent collaboration.
  */
-import type { MissionInput, MissionResult, WorkflowProgress } from '../types.js';
-export declare const getProgress: import("@temporalio/workflow").QueryDefinition<WorkflowProgress, [], string>;
-export declare const cancelGeneration: import("@temporalio/workflow").SignalDefinition<[], "cancelGeneration">;
-export declare const updateRequirements: import("@temporalio/workflow").SignalDefinition<[string], string>;
+import type { MissionInput, MissionResult } from '../types.js';
+export declare const getProgress: any;
+export declare const cancelGeneration: any;
+export declare const updateRequirements: any;
 /**
  * Main mission workflow
  */

@@ -20,6 +20,11 @@ export interface LLMConfig {
 export interface Message {
     role: 'system' | 'user' | 'assistant';
     content: string;
+    images?: string[];
+}
+export interface LLMRequest {
+    messages: Message[];
+    images?: string[];
 }
 export interface LLMResponse {
     content: string;

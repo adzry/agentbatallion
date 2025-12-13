@@ -92,4 +92,16 @@ export async function startPreview(sandboxId, port) {
     // Implementation would use E2B sandbox
     return `https://${sandboxId}.sandbox.e2b.dev:${port}`;
 }
+// Export UI Preview activity (Phase 1: Nano Banana)
+export { generateUiPreview } from './ui-preview.js';
+// Export Visual QA activity (Phase 2: Eye of Sauron)
+export { verifyVisuals } from './visual-qa.js';
+// Export User Simulation activity (Phase 3: Dynamic Swarm)
+export { simulateUser } from './user-simulation.js';
+// Export Repair activity (Phase 4: Lazarus Protocol)
+export { attemptRepair } from './repair.js';
+// Export Security Audit activity (Phase 5: Red Sparrow)
+export { performSecurityAudit } from './security-audit.js';
+// Export Knowledge Harvest activity (Phase 6: Overmind)
+export { harvestKnowledge } from './knowledge-harvest.js';
 //# sourceMappingURL=index.js.map

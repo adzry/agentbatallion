@@ -16,6 +16,14 @@ import { MessageBus } from '../../communication/message-bus.js';
 export declare class DesignerAgent extends BaseTeamAgent {
     constructor(memory: MemoryManager, tools: ToolRegistry, messageBus: MessageBus);
     /**
+     * Review visual implementation against design intent (Phase 2: Visual QA)
+     */
+    reviewVisualImplementation(codeIntent: string, screenshotBase64: string): Promise<{
+        approved: boolean;
+        defects: string[];
+        suggestions: string[];
+    }>;
+    /**
      * Create design system based on project requirements
      */
     createDesignSystem(requirements: Requirement[], projectContext: Partial<ProjectContext>): Promise<DesignSystem>;

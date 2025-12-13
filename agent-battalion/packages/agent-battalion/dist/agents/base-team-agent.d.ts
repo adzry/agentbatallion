@@ -10,6 +10,7 @@ import { MemoryManager } from '../memory/memory-manager.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import { MessageBus } from '../communication/message-bus.js';
 import { LLMService } from '../llm/llm-service.js';
+import { VectorMemory } from '../memory/vector-memory.js';
 export declare abstract class BaseTeamAgent extends EventEmitter {
     protected profile: AgentProfile;
     protected state: AgentState;
@@ -19,7 +20,16 @@ export declare abstract class BaseTeamAgent extends EventEmitter {
     protected projectContext: ProjectContext | null;
     protected llm: LLMService;
     protected useRealAI: boolean;
+    protected globalKnowledge: VectorMemory;
     constructor(profile: AgentProfile, memory: MemoryManager, tools: ToolRegistry, messageBus: MessageBus);
+    /**
+     * Query global knowledge base for learned patterns (Phase 6: Overmind)
+     */
+    protected queryCollectiveWisdom(problem: string): Promise<string[]>;
+    /**
+     * Enhance prompt with collective wisdom (Phase 6: Overmind)
+     */
+    protected enhancePromptWithWisdom(basePrompt: string, context?: string): Promise<string>;
     /**
      * Prompt the LLM with a system message and user message
      * Returns parsed JSON if possible, otherwise raw text

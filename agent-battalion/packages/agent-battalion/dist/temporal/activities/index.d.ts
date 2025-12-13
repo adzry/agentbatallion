@@ -60,4 +60,16 @@ export declare function installDependencies(sandboxId: string, packageJson: stri
  * Start preview server (placeholder)
  */
 export declare function startPreview(sandboxId: string, port: number): Promise<string>;
+export { generateUiPreview } from './ui-preview.js';
+export type { UIPreviewInput, UIPreviewResult } from './ui-preview.js';
+export { verifyVisuals } from './visual-qa.js';
+export type { VisualQAInput, VisualQAResult } from './visual-qa.js';
+export { simulateUser } from './user-simulation.js';
+export type { UserSimulationInput, UserSimulationResult } from './user-simulation.js';
+export { attemptRepair } from './repair.js';
+export type { RepairInput, RepairResult } from './repair.js';
+export { performSecurityAudit } from './security-audit.js';
+export type { SecurityAuditInput, SecurityAuditResult } from './security-audit.js';
+export { harvestKnowledge } from './knowledge-harvest.js';
+export type { KnowledgeHarvestInput, KnowledgeHarvestResult } from './knowledge-harvest.js';
 //# sourceMappingURL=index.d.ts.map

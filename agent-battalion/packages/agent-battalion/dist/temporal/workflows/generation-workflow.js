@@ -40,7 +40,19 @@ export async function generationWorkflow(input) {
         cancelled = true;
     });
     try {
-        // Phase 1: Requirements Analysis
+        // Phase 0: Rapid UI Preview (Nano Banana - runs in parallel)
+        // Start UI preview generation immediately for instant visual feedback
+        acts.generateUiPreview({
+            request: input.userRequest,
+        }).then((previewResult) => {
+            if (previewResult.success) {
+                console.log('[Nano Banana] UI preview generated:', previewResult.preview.slice(0, 100) + '...');
+            }
+        }).catch((error) => {
+            // Don't fail the whole workflow if preview fails
+            console.warn('UI preview failed:', error);
+        });
+        // Phase 1: Requirements Analysis (runs in parallel with UI preview)
         const requirementsResult = await acts.analyzeRequirements(input.projectId, input.userRequest);
         if (cancelled)
             throw new Error('Workflow cancelled');

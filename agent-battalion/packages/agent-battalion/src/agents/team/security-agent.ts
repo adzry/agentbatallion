@@ -152,7 +152,7 @@ Make the payloads practical and testable. Include the xpath selector for the tar
         description: string;
       }
 
-      const response = await this.promptJSON<AttackVector[]>(prompt);
+      const response = await this.promptLLM<AttackVector[]>(prompt, { expectJson: true });
       
       this.think(`Generated ${response.length} attack vectors`);
       return response;

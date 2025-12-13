@@ -55,6 +55,15 @@ export declare class VectorMemory extends EventEmitter {
      */
     store(content: string, metadata?: Partial<VectorDocument['metadata']>): Promise<VectorDocument>;
     /**
+     * Store a solution pattern in the global knowledge base (Phase 6: Overmind)
+     * This is shared across all missions for collective learning
+     */
+    storeSolutionPattern(problem: string, solution: string, tags?: string[]): Promise<VectorDocument>;
+    /**
+     * Find similar solution patterns from the global knowledge base (Phase 6: Overmind)
+     */
+    findSimilarSolutions(problem: string, topK?: number): Promise<string[]>;
+    /**
      * Search for similar documents
      */
     search(query: string, options?: {

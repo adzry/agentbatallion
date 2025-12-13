@@ -42,6 +42,20 @@ export interface SecurityReport {
 export declare class SecurityAgent extends BaseTeamAgent {
     constructor(memory: MemoryManager, tools: ToolRegistry, messageBus: MessageBus);
     /**
+     * Generate attack vectors for testing (Phase 5: Red Sparrow)
+     */
+    generateAttackVectors(appDescription: string): Promise<Array<{
+        name: string;
+        type: SecurityCategory;
+        payload: string;
+        target: string;
+        description: string;
+    }>>;
+    /**
+     * Get default attack vectors for testing
+     */
+    private getDefaultAttackVectors;
+    /**
      * Perform security audit on project files
      */
     auditSecurity(files: ProjectFile[]): Promise<SecurityReport>;

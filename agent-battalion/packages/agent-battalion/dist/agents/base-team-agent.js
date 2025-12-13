@@ -7,6 +7,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { EventEmitter } from 'events';
 import { createLLMService } from '../llm/llm-service.js';
+import { VectorMemory } from '../memory/vector-memory.js';
 export class BaseTeamAgent extends EventEmitter {
     profile;
     state;
@@ -16,6 +17,7 @@ export class BaseTeamAgent extends EventEmitter {
     projectContext = null;
     llm;
     useRealAI;
+    globalKnowledge; // Phase 6: Overmind
     constructor(profile, memory, tools, messageBus) {
         super();
         this.profile = profile;
@@ -25,6 +27,11 @@ export class BaseTeamAgent extends EventEmitter {
         // Initialize LLM service
         this.llm = createLLMService();
         this.useRealAI = process.env.USE_REAL_AI === 'true';
+        // Initialize global knowledge (Phase 6: Overmind)
+        this.globalKnowledge = new VectorMemory();
+        this.globalKnowledge.initialize().catch(err => {
+            console.warn('Global knowledge initialization failed:', err);
+        });
         this.state = {
             agentId: profile.id,
             status: 'idle',
@@ -35,6 +42,39 @@ export class BaseTeamAgent extends EventEmitter {
         };
         // Subscribe to messages directed to this agent
         this.messageBus.subscribe(this.profile.id, this.handleMessage.bind(this));
+    }
+    /**
+     * Query global knowledge base for learned patterns (Phase 6: Overmind)
+     */
+    async queryCollectiveWisdom(problem) {
+        try {
+            const solutions = await this.globalKnowledge.findSimilarSolutions(problem);
+            if (solutions.length > 0) {
+                this.think(`Found ${solutions.length} similar solutions in collective wisdom`);
+            }
+            return solutions;
+        }
+        catch (error) {
+            this.think(`Could not query collective wisdom: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            return [];
+        }
+    }
+    /**
+     * Enhance prompt with collective wisdom (Phase 6: Overmind)
+     */
+    async enhancePromptWithWisdom(basePrompt, context = '') {
+        const wisdom = await this.queryCollectiveWisdom(context || basePrompt);
+        if (wisdom.length === 0) {
+            return basePrompt;
+        }
+        const wisdomSection = `
+
+COLLECTIVE WISDOM (learned from previous missions):
+${wisdom.map((w, i) => `${i + 1}. ${w}`).join('\n')}
+
+Apply these learnings to avoid common pitfalls.
+`;
+        return basePrompt + wisdomSection;
     }
     /**
      * Prompt the LLM with a system message and user message
